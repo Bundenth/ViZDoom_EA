@@ -31,7 +31,7 @@ doom_config = "config/cig.cfg"
 num_features = 32
 num_states = 1
 
-isTraining = True
+isTraining = False
 isCig = True # whether or not the scenario is competition (cig)
 isNEAT = True # choose between NEAT or ES-HyperNEAT
 useShapingReward = False
