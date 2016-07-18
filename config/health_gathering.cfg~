@@ -1,0 +1,37 @@
+# Rewards
+living_reward = 1
+
+# Rendering options
+screen_resolution = RES_320X200
+screen_format = RGB24
+render_hud = false
+render_crosshair = false
+render_weapon = true
+render_decals = false
+render_particles = false
+window_visible = true
+sound_enabled = false
+
+# make episodes start after 20 tics (after unholstering the gun)
+episode_start_time = 14
+
+# make episodes finish after x actions (tics)
+episode_timeout = 2100
+
+# Available buttons
+available_buttons = 
+	{ 
+		TURN_LEFT
+		TURN_RIGHT
+		MOVE_FORWARD
+		MOVE_BACKWARD
+	}
+
+mode = PLAYER
+
+available_game_variables = 
+{
+	HEALTH
+	USER1
+}
+
