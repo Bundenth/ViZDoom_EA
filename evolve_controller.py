@@ -23,24 +23,25 @@ from learning_framework import *
 import learning_framework
 
 ### general parameters
-feature_detector_file = 'feature_detector_nets/cig_orig_rocket_cacodemon_FD_64x48x32_weights.save'
-controller_network_filename = 'controller_nets/cig_orig_rocket_cacodemon_32_NEAT_controller.net'
-doom_scenario = "scenarios/cig_orig_rocket.wad"
+feature_detector_file = 'feature_detector_nets/cig_orig_pistol_cacodemon_FD_64x48x32_weights.save'
+controller_network_filename = 'controller_nets/cig_orig_pistol_cacodemon_32_NEAT_controller.net'
+doom_scenario = "scenarios/cig_orig_pistol.wad"
 doom_config = "config/cig.cfg"
+stats_file = "stats/controller_cig_orig_pistol_cacodemon_32_stats.txt"
 
 num_features = 32
 num_states = 1
 
-isTraining = False
+isTraining = True
 isCig = True # whether or not the scenario is competition (cig)
 isNEAT = True # choose between NEAT or ES-HyperNEAT
 useShapingReward = False
 
 reward_multiplier = 5
-shoot_reward = -35.0
-health_kit_reward = 50.0 #75.0
+shoot_reward = -50.0
+health_kit_reward = 75.0 #75.0
 harm_reward = 0
-ammo_pack_reward = 0.0 #50.0
+ammo_pack_reward = 50.0 #50.0
 
 initial_health = 99
 
@@ -212,6 +213,10 @@ CustomDoomGame(game,doom_scenario,doom_config)
 start_game(game)
 
 def getbest(i,controller_network_filename):
+	f = open(stats_file,'w')
+	f.write("best,average,min,species,neurons,links\n")
+	f.close()
+
 	if isNEAT:
 		g = NEAT.Genome(0, num_features*num_states+3, 0, number_actions, False, NEAT.ActivationFunction.TANH_CUBIC, 
 			NEAT.ActivationFunction.TANH, 0, params)
@@ -234,10 +239,11 @@ def getbest(i,controller_network_filename):
 		fitnesses = EvaluateGenomeList_Serial(genome_list, evaluate, display=False)
 		[genome.SetFitness(fitness) for genome, fitness in zip(genome_list, fitnesses)]
 
-		print('Gen: %d Best: %d' % (generation+1, max(fitnesses)))
-
 		best = max(fitnesses)
-		print("Average: ",sum(fitnesses) / params.PopulationSize,"; Min: ",min(fitnesses))
+		avg = sum(fitnesses) / params.PopulationSize
+		worse = min(fitnesses)
+		print('Gen: %d Best: %d' % (generation+1, best))
+		print("Average: ",avg,"; Min: ",worse)
 		
 		#getting information about the generation champion
 		best_index = fitnesses.index(best)
@@ -250,6 +256,10 @@ def getbest(i,controller_network_filename):
 		
 		print("Species: ",len(pop.Species))
 		print("*****")
+		#store training stats
+		f = open(stats_file,'a')
+		f.write(str(best) + ',' + str(avg) + ',' + str(worse) + ',' + str(len(pop.Species)) + ',' + str(genome_list[best_index].NumNeurons()) + ',' + str(genome_list[best_index].NumLinks()) + str("\n"))
+		f.close()
 
 		if best > max_score:
 			max_score = best

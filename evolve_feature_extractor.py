@@ -32,6 +32,7 @@ import learning_framework
 ### general parameters
 feature_weights_filename = 'feature_detector_nets/cig_orig_rocket_cacodemon_FD_64x48x32_weights.save'
 images_filename = "feature_images/cig_orig_rocket_cacodemon_rgb.dat"
+stats_file = "stats/feature_extractor_cig_orig_rocket_cacodemon_32_stats.txt"
 
 mutation_rate = 0.0005 #0.003 probability of mutation (prob PER element)
 mutation_probability = 0.20 #probability that elite individual is mutated
@@ -113,6 +114,10 @@ def evaluate(cnn,individual,training_img_set):
 
 # fitness: measure of diversity (min(D) + mean(D))
 def evolve_feature_extractor(training_data_filename,weights_filename):
+	f = open(stats_file,'w')
+	f.write("best,average,worse\n")
+	f.close()
+	
 	print("Loading training data...")
 	f = open(training_data_filename,'rb')
 	training_img_set = cPickle.load(f)
@@ -171,7 +176,16 @@ def evolve_feature_extractor(training_data_filename,weights_filename):
 				mutation(ind)
 			new_generation.append(ind)
 		print(time.time()-t1)
-		print("Gen; ", gen+1, "; Best: ",max(fitnesses),"; Avg: ",sum(fitnesses)/len(fitnesses),"; Min: ",min(fitnesses))
+		best = max(fitnesses)
+		avg = sum(fitnesses)/len(fitnesses)
+		worse = min(fitnesses)
+		print("Gen; ", gen+1, "; Best: ",best,"; Avg: ",avg,"; Min: ",worse)
+		
+		#store training stats
+		f = open(stats_file,'a')
+		f.write(str(best) + ',' + str(avg) + ',' + str(worse) + '\n')
+		f.close()
+		
 		#store best individual
 		best = population[indices[0]]
 		for i in range(len(cnn.layers)):
