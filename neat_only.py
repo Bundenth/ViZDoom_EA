@@ -35,7 +35,7 @@ doom_scenario = "scenarios/cig_orig_pistol.wad"
 doom_config = "config/cig.cfg"
 stats_file = "_stats.txt"
 
-isTraining = True
+isTraining = False
 isCig = True
 
 #needs further downsampling to make it feasible
@@ -72,10 +72,10 @@ params.PopulationSize = 100#
 # dist = c1*E/N + c2*D/N + c3*W
 # E -> excess; D = disjoint; W -> average weight difference
 params.DynamicCompatibility = True #
-params.CompatTreshold = 5.0 #
+params.CompatTreshold = 15.0 #
 params.DisjointCoeff = 1.0#
 params.ExcessCoeff = 1.0#
-params.WeightDiffCoeff = 0.4#
+params.WeightDiffCoeff = 0.2#
 params.YoungAgeTreshold = 5 #fitness multiplier for young species
 params.YoungAgeFitnessBoost = 1.35
 params.SpeciesMaxStagnation = 20 #number of generations without improvement allowed for species
@@ -111,24 +111,6 @@ params.ActivationFunction_SignedSine_Prob = 1.0;
 params.ActivationFunction_UnsignedSine_Prob = 0.0;
 params.ActivationFunction_Linear_Prob = 1.0;
 
-
-def start_game(game):
-	if isTraining:
-		game.set_screen_resolution(ScreenResolution.RES_160X120)
-		game.set_window_visible(False)
-	else:
-		game.set_screen_resolution(ScreenResolution.RES_640X480)
-		game.set_window_visible(True)
-	
-	if isCig:
-		# Start multiplayer game only with Your AI (with options that will be used in the competition, details in cig_host example).
-		game.add_game_args("-host 1 -deathmatch +timelimit 10.0 "
-			"+sv_forcerespawn 1 +sv_noautoaim 1 +sv_respawnprotect 1 +sv_spawnfarthest 1")
-		# Name Your AI.
-		game.add_game_args("+name AI")
-		game.init()
-	else:
-		game.init()
 
 def getAction(net,inp):
 	net.Flush()
@@ -259,8 +241,8 @@ def getbest(i):
 
 
 game = DoomGame()
-CustomDoomGame(game,doom_scenario,doom_config)
-start_game(game)
+CustomDoomGame(game,doom_scenario,doom_config,"map01")
+start_game(game,isCig,not isTraining)
 
 if isTraining:
 	gens = []
@@ -272,5 +254,34 @@ if isTraining:
 
 	print('All:', gens)
 	print('Average:', avg_gens)
+
+
+#test
+net = NEAT.NeuralNetwork()
+net.Load(controller_network_filename)
+
+for ep in range(100):
+	game.new_episode()
+	counter = 0
+	while not game.is_episode_finished():
+		s = game.get_state()
+		counter = counter + 1
+		ammo = game.get_game_variable(GameVariable.SELECTED_WEAPON_AMMO)
+		health = max(0,game.get_game_variable(GameVariable.HEALTH))
+		ammo_input = min(float(ammo)/40.0,1.0)
+		health_input = float(health)/100.0
+		img = convert(s.image_buffer)
+		#img = img.reshape([1, channels, downsampled_y, downsampled_x])
+		ammo_input = min(float(ammo)/40.0,1.0)
+		health_input = float(health)/100.0
+		inp = np.array(img)
+		inp = np.append(inp,[ammo_input,health_input,1.])
+		action = getAction(net,inp)
+		game.make_action(action,0+1)
+		sleep(0.028)
+		if game.is_player_dead():
+			break
+
+	print(game.get_total_reward())
 
 game.close()
