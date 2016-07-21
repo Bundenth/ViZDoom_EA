@@ -25,11 +25,13 @@ import learning_framework
 
 ### general parameters
 feature_detector_file = 'feature_detector_nets/cig_orig_pistol_marine_FD_64x48x32_weights.save'
-controller_network_filename = 'controller_nets/cig_orig_pistol_marine_32_NEAT/controller'
+controller_network_filename = 'controller_nets/cig_orig_pistol_marine_32_HyperNEAT/controller'
 test_controller_net_gen = '1'
 doom_scenario = "scenarios/cig_orig_pistol.wad"
 doom_config = "config/cig.cfg"
 stats_file = "_stats.txt"
+map1 = "map01"
+map2 = "map02"
 
 num_features = 32
 num_states = 1
@@ -40,7 +42,7 @@ isNEAT = True # choose between NEAT or ES-HyperNEAT
 useShapingReward = False
 
 reward_multiplier = 5
-shoot_reward = -50.0
+shoot_reward = -25.0
 health_kit_reward = 75.0 #75.0
 harm_reward = 0
 ammo_pack_reward = 50.0 #50.0
@@ -159,23 +161,6 @@ if not isNEAT:
 	params.Height = 2.;
 	params.Elitism = 0.1;
 
-def start_game(game):
-	if isTraining:
-		game.set_screen_resolution(ScreenResolution.RES_160X120)
-		game.set_window_visible(False)
-	else:
-		game.set_screen_resolution(ScreenResolution.RES_640X480)
-		game.set_window_visible(True)
-	
-	if isCig:
-		# Start multiplayer game only with Your AI (with options that will be used in the competition, details in cig_host example).
-		game.add_game_args("-host 1 -deathmatch +timelimit 10.0 "
-			"+sv_forcerespawn 1 +sv_noautoaim 1 +sv_respawnprotect 1 +sv_spawnfarthest 1")
-		# Name Your AI.
-		game.add_game_args("+name AI")
-		game.init()
-	else:
-		game.init()
 
 def getAction(net,inp):
 	net.Flush()
@@ -211,8 +196,15 @@ def getAction(net,inp):
 
 
 game = DoomGame()
-CustomDoomGame(game,doom_scenario,doom_config)
-start_game(game)
+CustomDoomGame(game,doom_scenario,doom_config,map1)
+start_game(game,isCig,not isTraining)
+
+if map1 == map2:
+	game2 = game
+else:
+	game2 = DoomGame()
+	CustomDoomGame(game2,doom_scenario,doom_config,map2)
+	start_game(game2,isCig,not isTraining)
 
 def getbest(i,controller_network_filename):
 	if not os.path.exists(os.path.dirname(controller_network_filename)):
@@ -286,25 +278,27 @@ def evaluate(genome):
 		else:
 			genome.BuildESHyperNEATPhenotype(net, substrate, params)
 		# do stuff and return the fitness
-		counter = 0
 		ammo_reward = 0
 		health_reward = 0
 		shaping_reward = 0
 		for ep in range(test_fitness_episodes):
+			if ep % 2 == 0:
+				g = game
+			else:
+				g = game2
 			states = [None for _ in range(num_states)]
 			last_ammo = -1
 			last_health = initial_health
 			try:
-				game.new_episode()
+				g.new_episode()
 			except Exception as ex:
 				print('Exception:', ex)
 				raise SystemExit
-			while not game.is_episode_finished():
+			while not g.is_episode_finished():
 				# Get processed image
-				counter = counter + 1
 				s = game.get_state()
-				ammo = game.get_game_variable(GameVariable.SELECTED_WEAPON_AMMO)
-				health = max(0,game.get_game_variable(GameVariable.HEALTH))
+				ammo = g.get_game_variable(GameVariable.SELECTED_WEAPON_AMMO)
+				health = max(0,g.get_game_variable(GameVariable.HEALTH))
 				img = convert(s.image_buffer)
 				img = img.reshape([1, channels, downsampled_y, downsampled_x])
 				features = fd_network.predict(img).flatten()
@@ -319,7 +313,7 @@ def evaluate(genome):
 				inp = np.array(states)
 				inp = np.append(inp,[ammo_input,health_input,1.])
 				action = getAction(net,inp)
-				game.make_action(action,skiprate+1)
+				g.make_action(action,skiprate+1)
 				#action = np.argmax(output)
 				#game.make_action(actions_available[action],skiprate+1)
 				if not last_ammo < 0:
@@ -333,13 +327,13 @@ def evaluate(genome):
 				if health < last_health - 10: #if harm
 					health_reward = health_reward + (health - last_health) * harm_reward
 				last_health = health
-				if game.is_player_dead():
+				if g.is_player_dead():
 					#reward += death_reward 
 					break
 			# use shaping rewards to reinforce behaviours
 			if useShapingReward:
-				reward += doom_fixed_to_double(game.get_game_variable(GameVariable.USER1))
-			reward += game.get_total_reward() * reward_multiplier
+				reward += doom_fixed_to_double(g.get_game_variable(GameVariable.USER1))
+			reward += g.get_total_reward() * reward_multiplier
 			#if counter * (skiprate + 1) > training_length:
 			#	break
 		reward += ammo_reward + health_reward
@@ -368,14 +362,18 @@ net = NEAT.NeuralNetwork()
 net.Load(controller_network_filename + test_controller_net_gen + '.net')
 
 for ep in range(100):
-	game.new_episode()
+	if ep % 2 == 0:
+		g = game
+	else:
+		g = game2
+	g.new_episode()
 	counter = 0
 	states = [None for _ in range(num_states)]
-	while not game.is_episode_finished():
+	while not g.is_episode_finished():
 		s = game.get_state()
 		counter = counter + 1
-		ammo = game.get_game_variable(GameVariable.SELECTED_WEAPON_AMMO)
-		health = max(0,game.get_game_variable(GameVariable.HEALTH))
+		ammo = g.get_game_variable(GameVariable.SELECTED_WEAPON_AMMO)
+		health = max(0,g.get_game_variable(GameVariable.HEALTH))
 		ammo_input = min(float(ammo)/40.0,1.0)
 		health_input = float(health)/100.0
 		img = convert(s.image_buffer)
@@ -390,15 +388,15 @@ for ep in range(100):
 		inp = np.array(states)
 		inp = np.append(inp,[ammo_input,health_input,1.])
 		action = getAction(net,inp)
-		game.make_action(action,0+1)
+		g.make_action(action,0+1)
 		sleep(0.028)
-		if game.is_player_dead():
+		if g.is_player_dead():
 			break
 
-	print(game.get_total_reward())
+	print(g.get_total_reward())
 
 game.close()
-
+game2.close()
 ######################################################################
 ######################################################################
 

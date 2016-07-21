@@ -17,19 +17,36 @@ from keras.layers import Convolution2D, MaxPooling2D
 from keras.models import model_from_json
 
 # image parameters
-downsampled_x = 64
-downsampled_y = 48#int(3/4.0*downsampled_x)
+downsampled_x = 64 #64
+downsampled_y = 48#48
 channels = 3 #channels on input image considered (GRAY8 = 1; RGB = 3)
 skiprate = 3
 
 
 class CustomDoomGame:
-	def __init__(self,game,scenario, config):
+	def __init__(self,game,scenario, config,selectedMap):
 		game.set_vizdoom_path("../ViZDoom/bin/vizdoom")
 		game.set_doom_game_path("../ViZDoom/scenarios/doom2.wad")
 		game.set_doom_scenario_path(scenario)
-		game.set_doom_map("map01")
+		game.set_doom_map(selectedMap)
 		game.load_config(config)
+
+def start_game(game,multiplayer,visible):
+	if not visible:
+		game.set_screen_resolution(ScreenResolution.RES_160X120)
+	else:
+		game.set_screen_resolution(ScreenResolution.RES_640X480)
+	game.set_window_visible(visible)
+	
+	if multiplayer:
+		# Start multiplayer game only with Your AI (with options that will be used in the competition, details in cig_host example).
+		game.add_game_args("-host 1 -deathmatch +timelimit 10.0 "
+			"+sv_forcerespawn 1 +sv_noautoaim 1 +sv_respawnprotect 1 +sv_spawnfarthest 1")
+		# Name Your AI.
+		game.add_game_args("+name AI")
+		game.init()
+	else:
+		game.init()
 
 # Function for converting images
 def convert(img):
