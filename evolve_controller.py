@@ -25,14 +25,14 @@ import learning_framework
 ### general parameters
 feature_detector_file = 'feature_detector_nets/cig_orig_pistol_cacodemon_FD_64x48x32_weights.save'
 controller_network_filename = 'controller_nets/cig_orig_pistol_cacodemon_32_NEAT_controller.net'
-doom_scenario = "scenarios/cig_orig_pistol.wad"
+doom_scenario = "scenarios/cig_orig_rocket.wad"
 doom_config = "config/cig.cfg"
 stats_file = "stats/controller_cig_orig_pistol_cacodemon_32_stats.txt"
 
 num_features = 32
 num_states = 1
 
-isTraining = True
+isTraining = False
 isCig = True # whether or not the scenario is competition (cig)
 isNEAT = True # choose between NEAT or ES-HyperNEAT
 useShapingReward = False
