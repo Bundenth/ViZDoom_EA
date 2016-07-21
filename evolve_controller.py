@@ -8,6 +8,7 @@ from time import sleep
 from time import time
 import time
 import math
+import os
 
 import numpy as np
 from six.moves import cPickle
@@ -23,16 +24,17 @@ from learning_framework import *
 import learning_framework
 
 ### general parameters
-feature_detector_file = 'feature_detector_nets/cig_orig_pistol_cacodemon_FD_64x48x32_weights.save'
-controller_network_filename = 'controller_nets/cig_orig_pistol_cacodemon_32_NEAT_controller.net'
-doom_scenario = "scenarios/cig_orig_rocket.wad"
+feature_detector_file = 'feature_detector_nets/cig_orig_pistol_marine_FD_64x48x32_weights.save'
+controller_network_filename = 'controller_nets/cig_orig_pistol_marine_32_NEAT/controller'
+test_controller_net_gen = '1'
+doom_scenario = "scenarios/cig_orig_pistol.wad"
 doom_config = "config/cig.cfg"
-stats_file = "stats/controller_cig_orig_pistol_cacodemon_32_stats.txt"
+stats_file = "controller_nets/cig_orig_pistol_marine_32_NEAT/_stats.txt"
 
 num_features = 32
 num_states = 1
 
-isTraining = False
+isTraining = True
 isCig = True # whether or not the scenario is competition (cig)
 isNEAT = True # choose between NEAT or ES-HyperNEAT
 useShapingReward = False
@@ -121,7 +123,7 @@ if not isNEAT:
 	for i in range(num_states):
 		for j in range(num_features):
 			substrate_inputs += [(i/(num_states/2.)-1,j/(num_features/2.)-1,-1.)]
-	substrate_inputs += [(-2,0,0.),(-1,0,0.),(0,0,0.),(1,0,0.)]
+	substrate_inputs += [(-1,0,0.),(0,0,0.),(1,0,0.)]
 	substrate_outputs = []
 	for i in range(number_actions):
 		substrate_outputs += [(i/(number_actions/2.)-1,0.,1.)]
@@ -213,6 +215,8 @@ CustomDoomGame(game,doom_scenario,doom_config)
 start_game(game)
 
 def getbest(i,controller_network_filename):
+	if not os.path.exists(os.path.dirname(controller_network_filename)):
+		os.makedirs(os.path.dirname(controller_network_filename))
 	f = open(stats_file,'w')
 	f.write("best,average,min,species,neurons,links\n")
 	f.close()
@@ -263,7 +267,7 @@ def getbest(i,controller_network_filename):
 
 		if best > max_score:
 			max_score = best
-		net.Save(controller_network_filename)
+		net.Save(controller_network_filename + str(generation+1) + '.net')
 
 		pop.Epoch()
 		generations = generation
@@ -361,7 +365,7 @@ if isTraining:
 
 #test
 net = NEAT.NeuralNetwork()
-net.Load(controller_network_filename)
+net.Load(controller_network_filename + test_controller_net_gen + '.net')
 
 for ep in range(100):
 	game.new_episode()

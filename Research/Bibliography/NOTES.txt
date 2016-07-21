@@ -1,0 +1,22 @@
+Important links:
+Deep RL http://www.nervanasys.com/demistifying-deep-reinforcement-learning
+CNN architectures http://cs231n.github.io/convolutional-networks/
+NEAT page http://www.cs.ucf.edu/~kstanley/neat.html
+ES-hyper NEAT http://eplex.cs.ucf.edu/ESHyperNEAT/
+HyperNEAT page http://eplex.cs.ucf.edu/hyperNEATpage/HyperNEAT.html
+NEAT implementations http://eplex.cs.ucf.edu/neat_software/#ES-HyperNEAT
+summary of papers http://www.danielslater.net/2015_10_01_archive.html
+HyperNEAT implementation and documentation http://www.multineat.com/download.html
+	NEAT.Substrate --> each layer is asking for coordinates for each unit
+	try using HyperNEAT vs ES-HyperNEAT
+CMA Evolution Strategy and code https://www.lri.fr/~hansen/cmaesintro.html
+
+Using ReNet architecture for DL
+Evolution algorithms
+	NEAT
+	CoSyNE (Accelerated neural evolution through cooperatively
+coevolved synapses)
+
+
+
+

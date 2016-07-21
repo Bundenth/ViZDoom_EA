@@ -30,9 +30,9 @@ from learning_framework import *
 import learning_framework
 
 ### general parameters
-feature_weights_filename = 'feature_detector_nets/cig_orig_rocket_cacodemon_FD_64x48x32_weights.save'
-images_filename = "feature_images/cig_orig_rocket_cacodemon_rgb.dat"
-stats_file = "stats/feature_extractor_cig_orig_rocket_cacodemon_32_stats.txt"
+feature_weights_filename = 'feature_detector_nets/cig_orig_pistol_marine_FD_64x48x32_weights.save'
+images_filename = "feature_images/cig_orig_pistol_marine_rgb.dat"
+stats_file = "stats/feature_extractor_cig_orig_pistol_marine_32_stats.txt"
 
 mutation_rate = 0.0005 #0.003 probability of mutation (prob PER element)
 mutation_probability = 0.20 #probability that elite individual is mutated

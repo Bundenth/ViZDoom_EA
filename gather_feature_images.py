@@ -9,8 +9,8 @@ from time import sleep
 from learning_framework import *
 import learning_framework
 
-images_filename = "feature_images/cig_orig_rocket_cacodemon_rgb.dat"
-doom_scenario = "scenarios/cig_orig_rocket.wad"
+images_filename = "feature_images/cig_orig_pistol_marine_rgb.dat"
+doom_scenario = "scenarios/cig_orig_pistol.wad"
 doom_config = "config/cig_playable.cfg"
 isCig = True
 checkDupes = False
