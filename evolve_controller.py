@@ -29,7 +29,7 @@ controller_network_filename = 'controller_nets/cig_orig_pistol_marine_32_NEAT/co
 test_controller_net_gen = '1'
 doom_scenario = "scenarios/cig_orig_pistol.wad"
 doom_config = "config/cig.cfg"
-stats_file = "controller_nets/cig_orig_pistol_marine_32_NEAT/_stats.txt"
+stats_file = "_stats.txt"
 
 num_features = 32
 num_states = 1
@@ -217,7 +217,7 @@ start_game(game)
 def getbest(i,controller_network_filename):
 	if not os.path.exists(os.path.dirname(controller_network_filename)):
 		os.makedirs(os.path.dirname(controller_network_filename))
-	f = open(stats_file,'w')
+	f = open(os.path.dirname(controller_network_filename) + '/' + stats_file,'w')
 	f.write("best,average,min,species,neurons,links\n")
 	f.close()
 
@@ -261,7 +261,7 @@ def getbest(i,controller_network_filename):
 		print("Species: ",len(pop.Species))
 		print("*****")
 		#store training stats
-		f = open(stats_file,'a')
+		f = open(os.path.dirname(controller_network_filename) + '/' + stats_file,'a')
 		f.write(str(best) + ',' + str(avg) + ',' + str(worse) + ',' + str(len(pop.Species)) + ',' + str(genome_list[best_index].NumNeurons()) + ',' + str(genome_list[best_index].NumLinks()) + str("\n"))
 		f.close()
 
