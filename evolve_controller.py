@@ -24,14 +24,14 @@ from learning_framework import *
 import learning_framework
 
 ### general parameters
-feature_detector_file = 'feature_detector_nets/MIXED_cig_orig_pistol_marine_FD_64x48x32_weights.save'
-controller_network_filename = 'controller_nets/MIXED_cig_orig_pistol_marine_32_NEAT/controller'
-test_controller_net_gen = '746'
+feature_detector_file = 'feature_detector_nets/CC_cig_orig_pistol_marine_FD_64x48x32_weights.save'
+controller_network_filename = 'controller_nets/CC_cig_orig_pistol_marine_32_NEAT/controller'
+test_controller_net_gen = '1'
 doom_scenario = "scenarios/cig_orig_pistol.wad"
 doom_config = "config/cig.cfg"
 stats_file = "_stats.txt"
-map1 = "map03"
-map2 = "map03"
+map1 = "map01"
+map2 = "map01"
 
 num_features = 32
 num_states = 1
@@ -69,7 +69,7 @@ input_dead_zone = 0.2
 # left, right, forward backward and pair-combinations (health_gather)
 #actions_available = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1],[1,0,1,0],[1,0,0,1],[0,1,1,0],[0,1,0,1]]
 
-test_fitness_episodes = 2
+test_fitness_episodes = 3
 epochs = 1000
 
 #load feature detector network
