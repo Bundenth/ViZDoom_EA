@@ -24,14 +24,14 @@ from learning_framework import *
 import learning_framework
 
 ### general parameters
-feature_detector_file = 'feature_detector_nets/cig_orig_pistol_marine_FD_64x48x32_weights.save'
-controller_network_filename = 'controller_nets/cig_orig_pistol_marine_32_HyperNEAT/controller'
-test_controller_net_gen = '1'
+feature_detector_file = 'feature_detector_nets/MIXED_cig_orig_pistol_marine_FD_64x48x32_weights.save'
+controller_network_filename = 'controller_nets/MIXED_cig_orig_pistol_marine_32_NEAT/controller'
+test_controller_net_gen = '746'
 doom_scenario = "scenarios/cig_orig_pistol.wad"
 doom_config = "config/cig.cfg"
 stats_file = "_stats.txt"
-map1 = "map01"
-map2 = "map02"
+map1 = "map03"
+map2 = "map03"
 
 num_features = 32
 num_states = 1
@@ -40,12 +40,14 @@ isTraining = True
 isCig = True # whether or not the scenario is competition (cig)
 isNEAT = True # choose between NEAT or ES-HyperNEAT
 useShapingReward = False
+isColourCorrection = True
 
 reward_multiplier = 5
-shoot_reward = -25.0
+shoot_reward = -50.0
 health_kit_reward = 75.0 #75.0
 harm_reward = 0
 ammo_pack_reward = 50.0 #50.0
+death_reward = 0.0
 
 initial_health = 99
 
@@ -294,14 +296,23 @@ def evaluate(genome):
 			except Exception as ex:
 				print('Exception:', ex)
 				raise SystemExit
+			error_counter = 0
+			none_state_counter = 0
 			while not g.is_episode_finished():
 				# Get processed image
-				s = game.get_state()
-				ammo = g.get_game_variable(GameVariable.SELECTED_WEAPON_AMMO)
-				health = max(0,g.get_game_variable(GameVariable.HEALTH))
-				img = convert(s.image_buffer)
+				s = g.get_state()
+				if s.image_buffer is None:
+					print("Image was None")
+					error_counter += 1
+					if error_counter > 2:
+						print("Too many None states")
+						break
+					continue
+				img = convert(s.image_buffer,isColourCorrection)
 				img = img.reshape([1, channels, downsampled_y, downsampled_x])
 				features = fd_network.predict(img).flatten()
+				ammo = g.get_game_variable(GameVariable.SELECTED_WEAPON_AMMO)
+				health = max(0,g.get_game_variable(GameVariable.HEALTH))
 				ammo_input = min(float(ammo)/40.0,1.0)
 				health_input = float(health)/100.0
 				#multistate
@@ -309,6 +320,10 @@ def evaluate(genome):
 					states[state] = states[state+1] 
 				states[num_states-1] = features
 				if None in states:
+					none_state_counter += 1
+					if none_state_counter > num_states:
+						print("Too many None states")
+						break
 					continue
 				inp = np.array(states)
 				inp = np.append(inp,[ammo_input,health_input,1.])
@@ -328,7 +343,7 @@ def evaluate(genome):
 					health_reward = health_reward + (health - last_health) * harm_reward
 				last_health = health
 				if g.is_player_dead():
-					#reward += death_reward 
+					reward += death_reward 
 					break
 			# use shaping rewards to reinforce behaviours
 			if useShapingReward:
@@ -370,13 +385,13 @@ for ep in range(100):
 	counter = 0
 	states = [None for _ in range(num_states)]
 	while not g.is_episode_finished():
-		s = game.get_state()
+		s = g.get_state()
 		counter = counter + 1
 		ammo = g.get_game_variable(GameVariable.SELECTED_WEAPON_AMMO)
 		health = max(0,g.get_game_variable(GameVariable.HEALTH))
 		ammo_input = min(float(ammo)/40.0,1.0)
 		health_input = float(health)/100.0
-		img = convert(s.image_buffer)
+		img = convert(s.image_buffer,isColourCorrection)
 		img = img.reshape([1, channels, downsampled_y, downsampled_x])
 		features = fd_network.predict(img).flatten()
 		#multistate

@@ -9,15 +9,16 @@ from time import sleep
 from learning_framework import *
 import learning_framework
 
-images_filename = "feature_images/cig_orig_pistol_marine_rgb.dat"
+images_filename = "feature_images/MIXED_cig_orig_pistol_marine_rgb.dat"
 doom_scenario = "scenarios/cig_orig_pistol.wad"
 doom_config = "config/cig_playable.cfg"
 map1 = "map01"
-map2 = "map02"
+map2 = "map03"
 
 isCig = True
+isColourCorrection = True
 
-recorded_episodes = 1
+recorded_episodes = 5
 
 ### FUNCTIONS
 # Gather image from play
@@ -29,12 +30,6 @@ def gatherData(training_img_set,filename,mapSelected):
 	
 	for j in range(recorded_episodes):
 		print("Episode #", j+1)
-		#if isCig:
-		#	for i in range(bots_number):
-		#		game.send_game_command("addbot")
-		#else:
-			# Starts a new episode. 
-		#	game.new_episode()
 		game.new_episode()
 		while not game.is_episode_finished():
 			if isCig and game.is_player_dead():
@@ -51,8 +46,8 @@ def gatherData(training_img_set,filename,mapSelected):
 				continue
 			# Get processed image
 			# Gray8 shape is not cv2 compliant
-			img = learning_framework.convert(s.image_buffer) # [channel][rows][cols]
-
+			img = learning_framework.convert(s.image_buffer,isColourCorrection) # [channel][rows][cols]
+			
 			training_img_set.append(img)
 			print("new")
 		print("Episode finished: ",j+1)
@@ -86,4 +81,5 @@ if not map1 == map2:
 
 
 
+cv2.destroyAllWindows()
 

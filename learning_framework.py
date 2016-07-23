@@ -49,13 +49,25 @@ def start_game(game,multiplayer,visible):
 		game.init()
 
 # Function for converting images
-def convert(img):
+def convert(img,colorCorrection):
 	'''
 	#for GRAY8 images
 	img = img[0].astype(np.float32) / 255.0
 	img = cv2.resize(img, (downsampled_x, downsampled_y))
 	return img
 	'''
+	if colorCorrection:
+		imgp = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+		clip = (255-np.mean(img)) * 0.1#10
+		clahe = cv2.createCLAHE(clipLimit=clip)#, tileGridSize=(24,24))
+		img_lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+		lab_plane = img_lab[:,:,0]
+		cl2 = clahe.apply(lab_plane)
+		img_lab[:,:,0] = cl2
+		img = cv2.cvtColor(img_lab, cv2.COLOR_LAB2BGR)
+		#cv2.imshow('Doom Buffer',img)
+		#cv2.waitKey(1)
+	
 	# for RGB images
 	img = img.astype(np.float32) / 255.0
 	img_p = []
