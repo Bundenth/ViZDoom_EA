@@ -30,9 +30,9 @@ from learning_framework import *
 import learning_framework
 
 ### general parameters
-feature_weights_filename = 'feature_detector_nets/CC_cig_orig_pistol_marine_FD_64x48x32_weights.save'
-images_filename = "feature_images/CC_cig_orig_pistol_marine_rgb.dat"
-stats_file = "stats/CC_feature_extractor_cig_orig_pistol_marine_32_stats.txt"
+feature_weights_filename = 'feature_detector_nets/MIXED_cig_orig_pistol_marine_FD_64x48x32_weights.save'
+images_filename = "feature_images/MIXED_cig_orig_pistol_marine_rgb.dat"
+stats_file = "stats/MIXED_feature_extractor_cig_orig_pistol_marine_32_stats.txt"
 
 mutation_rate = 0.0005 #0.003 probability of mutation (prob PER element)
 mutation_probability = 0.20 #probability that elite individual is mutated

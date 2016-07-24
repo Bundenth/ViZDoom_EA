@@ -24,14 +24,14 @@ from learning_framework import *
 import learning_framework
 
 ### general parameters
-feature_detector_file = 'feature_detector_nets/CC_cig_orig_pistol_marine_FD_64x48x32_weights.save'
-controller_network_filename = 'controller_nets/CC_cig_orig_pistol_marine_32_NEAT/controller'
-test_controller_net_gen = '1'
+feature_detector_file = 'feature_detector_nets/MIXED_cig_orig_pistol_marine_FD_64x48x32_weights.save'
+controller_network_filename = 'controller_nets/MIXED_cig_orig_pistol_marine_32_NEAT/controller'
+test_controller_net_gen = '367'
 doom_scenario = "scenarios/cig_orig_pistol.wad"
 doom_config = "config/cig.cfg"
 stats_file = "_stats.txt"
 map1 = "map01"
-map2 = "map01"
+map2 = "map03"
 
 num_features = 32
 num_states = 1
@@ -40,10 +40,11 @@ isTraining = True
 isCig = True # whether or not the scenario is competition (cig)
 isNEAT = True # choose between NEAT or ES-HyperNEAT
 useShapingReward = False
-isColourCorrection = True
+isColourCorrection = False
+useActionSelection = True # whether output units are final actions or each unit forms a part of an action
 
 reward_multiplier = 5
-shoot_reward = -50.0
+shoot_reward = -35.0
 health_kit_reward = 75.0 #75.0
 harm_reward = 0
 ammo_pack_reward = 50.0 #50.0
@@ -51,21 +52,22 @@ death_reward = 0.0
 
 initial_health = 99
 
-# left,right, forward, backward and shoot and pair-combinations (cig)
-#actions_available = [[1,0,0,0,0],[0,1,0,0,0],[0,0,1,0,0],[0,0,0,1,0],[0,0,0,0,1], #single actions
-#			[1,0,1,0,0],[0,1,1,0,0],[1,0,0,1,0],[0,1,0,1,0], #let-right,forward double actions
-#			[1,0,0,0,1],[0,1,0,0,1],[0,0,1,0,1],[0,0,0,1,1]] #single actions+shoot
-#left, right,forward, backward and pair-combinations (health_gathering)
-#actions_available = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1], #single actions
-#			[1,0,1,0], [0,1,1,0], [1,0,0,1], [0,1,0,1]] #let-right,forward,backward double actions
-# left, right, shoot and pair-combinations (defend_centre)
-#actions_available = [[1,0,0],[0,1,0],[0,0,1],
-#				[1,0,1],[0,1,1]]
-actions_available = 4
-number_actions = 3 #axis + shoot
-number_axis = 2
-number_single_actions = 1
-input_dead_zone = 0.2
+if useActionSelection:
+	# left,right, forward and shoot and pair-combinations (cig)
+	actions_available = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1], #single actions
+				[1,0,1,0],[0,1,1,0],[1,0,0,1],[0,1,0,1], #let-right,forward double actions
+				[1,0,0,1],[0,1,0,1],[0,0,1,1]] #single actions+shoot
+	#left, right,forward, backward and pair-combinations (health_gathering)
+	#actions_available = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1], #single actions
+	#			[1,0,1,0], [0,1,1,0], [1,0,0,1], [0,1,0,1]] #let-right,forward,backward double actions
+	# left, right, shoot and pair-combinations (defend_centre)
+	#actions_available = [[1,0,0],[0,1,0],[0,0,1],
+	#				[1,0,1],[0,1,1]]
+else:
+	actions_available = 4
+	number_actions = 3 #axis + shoot
+	input_dead_zone = 0.2
+
 # left, right, forward backward and pair-combinations (health_gather)
 #actions_available = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1],[1,0,1,0],[1,0,0,1],[0,1,1,0],[0,1,0,1]]
 
@@ -129,8 +131,12 @@ if not isNEAT:
 			substrate_inputs += [(i/(num_states/2.)-1,j/(num_features/2.)-1,-1.)]
 	substrate_inputs += [(-1,0,0.),(0,0,0.),(1,0,0.)]
 	substrate_outputs = []
-	for i in range(number_actions):
-		substrate_outputs += [(i/(number_actions/2.)-1,0.,1.)]
+	if useActionSelection:
+		output_units = len(actions_available)
+	else:
+		output_units = number_actions
+	for i in range(output_units):
+		substrate_outputs += [(i/(output_units/2.)-1,0.,1.)]
 	substrate = NEAT.Substrate(substrate_inputs,
 							   [],
 							   substrate_outputs)
@@ -169,32 +175,36 @@ def getAction(net,inp):
 	net.Input(inp.tolist())
 	[net.Activate() for _ in range(4)]
 	output = net.Output()
-	action = [0 for _ in range(actions_available)]
-	'''
-	current_action = 0
-	for axis in range(number_axis):
-		if output[axis] > input_dead_zone:
-			action[current_action] = 1
-		current_action += 1
-		if output[axis] < -input_dead_zone:
-			action[current_action] = 1
-		current_action += 1
-	for single_action_ in range(number_single_actions):
-		if output[number_axis + single_action_] > input_dead_zone:
-			action[current_action] = 1
-		current_action += 1
-	'''
-	if output[0] > input_dead_zone:
-		action[0] = 1
-	if output[0] < -input_dead_zone:
-		action[1] = 1
-	if output[1] > input_dead_zone:
-		action[2] = 1
-	#if output[1] < -input_dead_zone:
-	#	action[3] = 1
-	if output[2] > input_dead_zone:
-		action[3] = 1
-	return action
+	if useActionSelection:
+		action = np.argmax(output)
+		return actions_available[action]
+	else:
+		action = [0 for _ in range(actions_available)]
+		'''
+		current_action = 0
+		for axis in range(number_axis):
+			if output[axis] > input_dead_zone:
+				action[current_action] = 1
+			current_action += 1
+			if output[axis] < -input_dead_zone:
+				action[current_action] = 1
+			current_action += 1
+		for single_action_ in range(number_single_actions):
+			if output[number_axis + single_action_] > input_dead_zone:
+				action[current_action] = 1
+			current_action += 1
+		'''
+		if output[0] > input_dead_zone:
+			action[0] = 1
+		if output[0] < -input_dead_zone:
+			action[1] = 1
+		if output[1] > input_dead_zone:
+			action[2] = 1
+		#if output[1] < -input_dead_zone:
+		#	action[3] = 1
+		if output[2] > input_dead_zone:
+			action[3] = 1
+		return action
 
 
 game = DoomGame()
@@ -216,7 +226,11 @@ def getbest(i,controller_network_filename):
 	f.close()
 
 	if isNEAT:
-		g = NEAT.Genome(0, num_features*num_states+3, 0, number_actions, False, NEAT.ActivationFunction.TANH_CUBIC, 
+		if useActionSelection:
+			output_units = len(actions_available)
+		else:
+			output_units = number_actions
+		g = NEAT.Genome(0, num_features*num_states+3, 0, output_units, False, NEAT.ActivationFunction.TANH_CUBIC, 
 			NEAT.ActivationFunction.TANH, 0, params)
 	else:
 		g = NEAT.Genome(0,
@@ -329,8 +343,7 @@ def evaluate(genome):
 				inp = np.append(inp,[ammo_input,health_input,1.])
 				action = getAction(net,inp)
 				g.make_action(action,skiprate+1)
-				#action = np.argmax(output)
-				#game.make_action(actions_available[action],skiprate+1)
+				#update variables
 				if not last_ammo < 0:
 					if ammo > last_ammo:
 						ammo_reward = ammo_reward + ammo_pack_reward
