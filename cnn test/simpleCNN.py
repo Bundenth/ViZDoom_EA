@@ -10,13 +10,7 @@
 # 
 #####################################################################
 from __future__ import print_function
-from vizdoom import DoomGame
-from vizdoom import Mode
-from vizdoom import Button
-from vizdoom import GameVariable
-from vizdoom import ScreenFormat
-from vizdoom import ScreenResolution
-# Or just use from vizdoom import *
+from vizdoom import *
 import cv2
 
 from random import choice

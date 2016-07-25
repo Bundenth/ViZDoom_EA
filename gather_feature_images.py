@@ -9,16 +9,16 @@ from time import sleep
 from learning_framework import *
 import learning_framework
 
-images_filename = "feature_images/MIXED_cig_orig_pistol_marine_rgb.dat"
+images_filename = "feature_images/cig_orig_pistol_marine_rgb.dat"
 doom_scenario = "scenarios/cig_orig_pistol.wad"
 doom_config = "config/cig_playable.cfg"
 map1 = "map01"
-map2 = "map03"
+map2 = "map01"
 
 isCig = True
 isColourCorrection = False
 
-recorded_episodes = 5
+recorded_episodes = 3
 
 ### FUNCTIONS
 # Gather image from play

@@ -24,14 +24,14 @@ from learning_framework import *
 import learning_framework
 
 ### general parameters
-feature_detector_file = 'feature_detector_nets/MIXED_cig_orig_pistol_marine_FD_64x48x32_weights.save'
-controller_network_filename = 'controller_nets/MIXED_cig_orig_pistol_marine_32_NEAT/controller'
-test_controller_net_gen = '367'
+feature_detector_file = 'feature_detector_nets/cig_orig_pistol_marine_FD_64x48x32_BIG_weights.save'
+controller_network_filename = 'controller_nets/cig_orig_pistol_marine_32BIG_NEAT/controller'
+test_controller_net_gen = '730'
 doom_scenario = "scenarios/cig_orig_pistol.wad"
 doom_config = "config/cig.cfg"
 stats_file = "_stats.txt"
 map1 = "map01"
-map2 = "map03"
+map2 = "map01"
 
 num_features = 32
 num_states = 1
@@ -41,10 +41,10 @@ isCig = True # whether or not the scenario is competition (cig)
 isNEAT = True # choose between NEAT or ES-HyperNEAT
 useShapingReward = False
 isColourCorrection = False
-useActionSelection = True # whether output units are final actions or each unit forms a part of an action
+useActionSelection = False # whether output units are final actions or each unit forms a part of an action
 
 reward_multiplier = 5
-shoot_reward = -35.0
+shoot_reward = -50.0
 health_kit_reward = 75.0 #75.0
 harm_reward = 0
 ammo_pack_reward = 50.0 #50.0
@@ -54,12 +54,12 @@ initial_health = 99
 
 if useActionSelection:
 	# left,right, forward and shoot and pair-combinations (cig)
-	actions_available = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1], #single actions
-				[1,0,1,0],[0,1,1,0],[1,0,0,1],[0,1,0,1], #let-right,forward double actions
-				[1,0,0,1],[0,1,0,1],[0,0,1,1]] #single actions+shoot
-	#left, right,forward, backward and pair-combinations (health_gathering)
 	#actions_available = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1], #single actions
-	#			[1,0,1,0], [0,1,1,0], [1,0,0,1], [0,1,0,1]] #let-right,forward,backward double actions
+	#			[1,0,1,0],[0,1,1,0], #let-right,forward double actions
+	#			[1,0,0,1],[0,1,0,1],[0,0,1,1]] #single actions+shoot
+	#left, right,forward, backward and pair-combinations (health_gathering)
+	actions_available = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1], #single actions
+				[1,0,1,0], [0,1,1,0], [1,0,0,1], [0,1,0,1]] #let-right,forward,backward double actions
 	# left, right, shoot and pair-combinations (defend_centre)
 	#actions_available = [[1,0,0],[0,1,0],[0,0,1],
 	#				[1,0,1],[0,1,1]]
@@ -71,7 +71,7 @@ else:
 # left, right, forward backward and pair-combinations (health_gather)
 #actions_available = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1],[1,0,1,0],[1,0,0,1],[0,1,1,0],[0,1,0,1]]
 
-test_fitness_episodes = 3
+test_fitness_episodes = 2
 epochs = 1000
 
 #load feature detector network
@@ -96,13 +96,13 @@ params.MinSpecies = 2 #
 params.MaxSpecies = 8 #
 params.EliteFraction = 0.1 #
 params.RouletteWheelSelection = False 
-params.CrossoverRate = 0.70#
+params.CrossoverRate = 0.70#0.70
 params.InterspeciesCrossoverRate = 0.001#
 params.MutateRemLinkProb = 0.015 
 params.RecurrentProb = 0.0015
-params.OverallMutationRate = 0.15 
-params.MutateAddLinkProb = 0.095#0.05-0.3
-params.MutateAddNeuronProb = 0.03 #
+params.OverallMutationRate = 0.15 #0.15
+params.MutateAddLinkProb = 0.095#0.095
+params.MutateAddNeuronProb = 0.03 #0.03
 params.MutateWeightsProb = 0.85 #
 params.WeightMutationMaxPower = 0.5 # 
 params.WeightReplacementMaxPower = 1.0 
@@ -388,6 +388,13 @@ if isTraining:
 #test
 net = NEAT.NeuralNetwork()
 net.Load(controller_network_filename + test_controller_net_gen + '.net')
+
+#if useDetectImages:
+	#load initial image to detect
+#	img = cv2.imread('cacodemon.png',1)
+#	bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+#	orb = cv2.ORB()
+#	kp1, des1 = orb.detectAndCompute(img,None)
 
 for ep in range(100):
 	if ep % 2 == 0:

@@ -33,13 +33,6 @@ detected = False
 location = (-1,-1)
 actions = [[True,False,False],[False,True,False],[False,False,True]]
 
-# Function for converting images
-def convert(img):
-    img = img[0].astype(np.float32) / 255.0
-    img = cv2.resize(img, (downsampled_x, downsampled_y))
-    return img
-	
-#def imgThread( p ):
 def imgThread(  ):
     while(True):
         #print "Worked..."
@@ -85,7 +78,7 @@ def imgThread(  ):
 
             #img2 = cv2.polylines(img2,[np.int32(dst)],True,255,3, cv2.LINE_AA)
             #img2 = cv2.line(img2, (0,0), (int(avgX), int(avgY)),255,3,cv2.LINE_AA)
-            #print "Matches Found-----------------------: - %d/%d" % (len(matches),MIN_MATCH_COUNT)
+            print "Matches Found-----------------------: - %d/%d" % (len(matches),MIN_MATCH_COUNT)
 			
             global detected
             detected = True
