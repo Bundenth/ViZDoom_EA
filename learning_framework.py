@@ -30,13 +30,13 @@ class CustomDoomGame:
 		game.set_doom_map(selectedMap)
 		game.load_config(config)
 
-def start_game(game,multiplayer,visible):
+def start_game(game,multiplayer,visible,mode = Mode.PLAYER):
 	if not visible:
 		game.set_screen_resolution(ScreenResolution.RES_160X120)
 	else:
 		game.set_screen_resolution(ScreenResolution.RES_640X480)
 	game.set_window_visible(visible)
-	
+	game.set_mode(mode)
 	if multiplayer:
 		# Start multiplayer game only with Your AI (with options that will be used in the competition, details in cig_host example).
 		game.add_game_args("-host 1 -deathmatch +timelimit 10.0 "
@@ -79,7 +79,6 @@ def create_cnn(input_rows,input_cols,num_outputs):
 
 	# input: input_colsxinput_rows images with 1 channels
 	# this applies 32 convolution filters of size 3x3 each.
-	'''
 	model.add(Convolution2D(8, 3, 3,
                         border_mode='valid',
                         input_shape=(channels, input_rows, input_cols)))
@@ -99,9 +98,9 @@ def create_cnn(input_rows,input_cols,num_outputs):
 	model.add(Activation('tanh')) # num_outputs
 	
 	model.compile(loss='categorical_crossentropy',
-              optimizer='adadelta',
-              metrics=['accuracy'])
-    '''
+		optimizer='adadelta',
+		metrics=['accuracy'])
+	'''
 	model.add(Convolution2D(16, 3, 3,
 			border_mode='valid',
 			input_shape=(channels, input_rows, input_cols)))
@@ -118,8 +117,9 @@ def create_cnn(input_rows,input_cols,num_outputs):
 	model.add(Activation('tanh')) # num_outputs
 	
 	model.compile(loss='categorical_crossentropy',
-              optimizer='adadelta',
-              metrics=['accuracy'])
+		optimizer='adadelta',
+		metrics=['accuracy'])
+	'''
 	return model
 
 

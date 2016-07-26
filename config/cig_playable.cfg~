@@ -3,7 +3,7 @@ living_reward = 0
 doom_skill = 0
 
 #10 minutes
-episode_timeout = 800
+episode_timeout = 1000
 
 # Rendering options
 screen_resolution = RES_640X480

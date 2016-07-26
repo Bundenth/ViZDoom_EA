@@ -24,9 +24,9 @@ from learning_framework import *
 import learning_framework
 
 ### general parameters
-feature_detector_file = 'feature_detector_nets/cig_orig_pistol_marine_FD_64x48x32_BIG_weights.save'
-controller_network_filename = 'controller_nets/cig_orig_pistol_marine_32BIG_NEAT/controller'
-test_controller_net_gen = '730'
+feature_detector_file = 'feature_detector_nets/cig_orig_pistol_marine_FD_64x48x32_lots_weights.save'
+controller_network_filename = 'controller_nets/cig_orig_pistol_marine_32_lots_NEAT/controller'
+test_controller_net_gen = '669'
 doom_scenario = "scenarios/cig_orig_pistol.wad"
 doom_config = "config/cig.cfg"
 stats_file = "_stats.txt"
@@ -36,7 +36,7 @@ map2 = "map01"
 num_features = 32
 num_states = 1
 
-isTraining = True
+isTraining = False
 isCig = True # whether or not the scenario is competition (cig)
 isNEAT = True # choose between NEAT or ES-HyperNEAT
 useShapingReward = False
