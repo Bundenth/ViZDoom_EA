@@ -12,7 +12,7 @@ render_weapon = true
 render_decals = false
 render_particles = false
 
-window_visible = true
+window_visible = false
 
 # Available buttons
 available_buttons = 

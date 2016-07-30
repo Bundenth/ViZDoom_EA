@@ -23,7 +23,7 @@ channels = 3 #channels on input image considered (GRAY8 = 1; RGB = 3)
 skiprate = 3
 
 class CustomDoomGame:
-	def __init__(self,game,scenario, config,selectedMap):
+	def __init__(self,game,scenario, config,selectedMap = "map01"):
 		game.set_vizdoom_path("../ViZDoom/bin/vizdoom")
 		game.set_doom_game_path("../ViZDoom/scenarios/doom2.wad")
 		game.set_doom_scenario_path(scenario)
@@ -48,7 +48,7 @@ def start_game(game,multiplayer,visible,mode = Mode.PLAYER):
 		game.init()
 
 # Function for converting images
-def convert(img,colorCorrection):
+def convert(img,colorCorrection=False):
 	'''
 	#for GRAY8 images
 	img = img[0].astype(np.float32) / 255.0

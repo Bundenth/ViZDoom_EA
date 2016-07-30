@@ -9,7 +9,7 @@ from time import sleep
 from learning_framework import *
 import learning_framework
 
-images_filename = "feature_images/cig_orig_pistol_marine_rgb_lots.dat"
+images_filename = "feature_images/cig_orig_pistol_marine_rgb.dat"
 doom_scenario = "scenarios/cig_orig_pistol.wad"
 doom_config = "config/cig_playable.cfg"
 map1 = "map01"
@@ -26,7 +26,7 @@ def gatherData(training_img_set,filename,mapSelected):
 	#configure doom game
 	game = DoomGame()
 	CustomDoomGame(game,doom_scenario,doom_config,mapSelected)
-	start_game(game,isCig,True)
+	start_game(game,isCig,True,Mode.SPECTATOR)
 	
 	for j in range(recorded_episodes):
 		print("Episode #", j+1)

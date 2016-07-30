@@ -30,9 +30,9 @@ from learning_framework import *
 import learning_framework
 
 ### general parameters
-feature_weights_filename = 'feature_detector_nets/cig_orig_pistol_marine_FD_64x48x32_lots_weights.save'
-images_filename = "feature_images/cig_orig_pistol_marine_rgb_lots.dat"
-stats_file = "stats/feature_extractor_cig_orig_pistol_marine_32_lots_stats.txt"
+feature_weights_filename = 'feature_detector_nets/cig_orig_pistol_marine_FD_64x48x4_weights.save'
+images_filename = "feature_images/cig_orig_pistol_marine_rgb.dat"
+stats_file = "stats/feature_extractor_cig_orig_pistol_marine_4_stats.txt"
 
 mutation_rate = 0.0005 #0.003 probability of mutation (prob PER element)
 mutation_probability = 0.20 #probability that elite individual is mutated
@@ -42,7 +42,7 @@ weight_start = 5.0
 
 population_size = 150
 generations = 1000 #number of generations in the evolution process
-num_features = 32 #number of outputs of the CNN compressor (features to learn)
+num_features = 4 #number of outputs of the CNN compressor (features to learn)
 elite_ratio = 0.05 #proportion of top individuals that go to next generation
 
 ### FUNCTIONS

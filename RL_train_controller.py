@@ -24,55 +24,51 @@ from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation, Flatten
 from keras.layers import Convolution2D, MaxPooling2D
 from keras.models import model_from_json
+import theano.tensor as T
 
 from learning_framework import *
 import learning_framework
 
-### general parameters
-use_feature_detector = False #False for full Deep RL; True to use FD
 feature_weights_filename = 'feature_detector_nets/cig_FD_64x48x(4x3x3)_weights.save'
-controller_weights_filename = 'controller_nets/RL_cig_controller_weights.save'
-doom_scenario = "scenarios/cig.wad"
-doom_config = "config/cig.cfg"
+controller_weights_filename = 'full_RL/custom_controller_weights.save'
+doom_scenario = "scenarios/custom.wad"
+doom_config = "config/custom.cfg"
 
-num_features = 48 #number of outputs of the CNN compressor (features to learn)
-#actions_available = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1],[1,0,1,0],[1,0,0,1],[0,1,1,0],[0,1,0,1]] #learning_framework.get_available_actions(4) #actions available for controller (num outputs in network)
-actions_available = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1], #single actions
-			[1,0,1,0],[0,1,1,0], #let-right,forward double actions
-			[1,0,0,1],[0,1,0,1],[0,0,1,1]] #single actions+shoot
-hidden_units = 12 # units in the controller's hidden layer
+### general parameters
+isTraining = True
+use_feature_detector = False #False for full Deep RL; True to use FD
+isCig = False
 
-isCig = True
+actions_available = [[1,0,0],[0,1,0],[0,0,1],
+					[1,0,1],[0,1,1]]
+
+#only for FD RL
+num_features = 32 #number of outputs of the CNN compressor (features to learn)
+
+if not use_feature_detector:
+	hidden_units = 12 # units in the controller's hidden layer
+else:
+	hidden_units = 512
 
 # exploration vs exploitation
 start_epsilon = float(1.0)
 end_epsilon = float(0.1)
 epsilon = start_epsilon
 static_epsilon_steps = 5000
-epsilon_decay_steps = 100000
+epsilon_decay_steps = 20000
 epsilon_decay_stride = (start_epsilon - end_epsilon) / epsilon_decay_steps
 
 reward_scale = 0.01
 replay_memory_size = 10000
 discount_factor = 0.99
-batch_size = 64
+batch_size = 32
 training_steps_per_epoch = 5000
 test_episodes_per_epoch = 50
-training_epochs = 150
+training_epochs = 100
 
-### FUNCTIONS
-def start_game(game):
-	if isCig:
-		# Start multiplayer game only with Your AI (with options that will be used in the competition, details in cig_host example).
-		game.add_game_args("-host 1 -deathmatch +timelimit 10.0 "
-			"+sv_forcerespawn 1 +sv_noautoaim 1 +sv_respawnprotect 1 +sv_spawnfarthest 1")
-		# Name Your AI.
-		game.add_game_args("+name AI")
-		game.init()
-		#for i in range(7):
-		#	game.send_game_command("addbot")
-	else:
-		game.init()
+# custom crossentropy
+cross_entropy_epsilon = 1.0e-9
+
 
 ##################################
 # RL training
@@ -218,6 +214,11 @@ def custom_loss(y_true, y_pred):
 			y_true[i] = y_pred[i];
 	loss = (y_pred-y_true) ** 2
 	return loss
+	'''Just another crossentropy'''
+	#y_pred = T.clip(y_pred, cross_entropy_epsilon, 1.0 - cross_entropy_epsilon)
+	#y_pred /= y_pred.sum(axis=-1, keepdims=True)
+	#cce = T.nnet.categorical_crossentropy(y_pred, y_true)
+	#return cce
 
 # use Deep RL to train controller
 def train_controller(fd_weights_filename,controller_weights_filename):
@@ -225,11 +226,14 @@ def train_controller(fd_weights_filename,controller_weights_filename):
 
 	game = DoomGame()
 	CustomDoomGame(game,doom_scenario,doom_config)
-	start_game(game)
+	start_game(game,isCig,False)
 
 	#load feature detector network
-	fd_network = create_cnn(downsampled_y,downsampled_y,num_features)
-	fd_network.load_weights(fd_weights_filename)
+	if not use_feature_detector:
+		fd_network = None
+	else:
+		fd_network = create_cnn(downsampled_y,downsampled_y,num_features)
+		fd_network.load_weights(fd_weights_filename)
 
 	#create network controller
 	if(not use_feature_detector):
@@ -237,14 +241,14 @@ def train_controller(fd_weights_filename,controller_weights_filename):
 			Convolution2D(32, 8, 8, border_mode='valid',input_shape=(channels, downsampled_y, downsampled_x)),
 			Activation('relu'),
 			MaxPooling2D(pool_size=(2, 2)),
-			Convolution2D(32, 4, 4),
+			Convolution2D(64, 4, 4),
 			Activation('relu'),
 			MaxPooling2D(pool_size=(2, 2)),
-			Convolution2D(32, 3, 3),
+			Convolution2D(64, 3, 3),
 			Activation('relu'),
 			MaxPooling2D(pool_size=(2, 2)),
 			Flatten(),
-			Dense(512),
+			Dense(hidden_units),
 			Activation('relu'),
 			Dense(len(actions_available)),
 			Activation('tanh')
@@ -333,28 +337,29 @@ def train_controller(fd_weights_filename,controller_weights_filename):
 ######################################################################
 ######################################################################
 
-train_controller(feature_weights_filename,controller_weights_filename)
+if isTraining:
+	train_controller(feature_weights_filename,controller_weights_filename)
 
 
 #test
 print("Watching")
 game = DoomGame()
 CustomDoomGame(game,doom_scenario,doom_config)
-start_game(game)
+start_game(game,isCig,True)
 
 if(not use_feature_detector):
 	controller_network = Sequential([
 		Convolution2D(32, 8, 8, border_mode='valid',input_shape=(channels, downsampled_y, downsampled_x)),
 		Activation('relu'),
 		MaxPooling2D(pool_size=(2, 2)),
-		Convolution2D(32, 4, 4),
+		Convolution2D(64, 4, 4),
 		Activation('relu'),
 		MaxPooling2D(pool_size=(2, 2)),
-		Convolution2D(32, 3, 3),
+		Convolution2D(64, 3, 3),
 		Activation('relu'),
 		MaxPooling2D(pool_size=(2, 2)),
 		Flatten(),
-		Dense(512),
+		Dense(hidden_units),
 		Activation('relu'),
 		Dense(len(actions_available)),
 		Activation('tanh')
@@ -374,8 +379,11 @@ controller_network.compile(loss=custom_loss, #'categorical_crossentropy',
 	metrics=['accuracy'])
 controller_network.load_weights(controller_weights_filename)
 
-fd_network = create_cnn(45,60,num_features)
-fd_network.load_weights(feature_weights_filename)
+if not use_feature_detector:
+	fd_network = None
+else:
+	fd_network = create_cnn(45,60,num_features)
+	fd_network.load_weights(feature_weights_filename)
 
 for i in range(100):
 	game.new_episode()

@@ -24,16 +24,17 @@ from learning_framework import *
 import learning_framework
 
 ### general parameters
-feature_detector_file = 'feature_detector_nets/cig_orig_pistol_marine_FD_64x48x32_lots_weights.save'
-controller_network_filename = 'controller_nets/cig_orig_pistol_marine_32_lots_NEAT/controller'
-test_controller_net_gen = '669'
+feature_detector_file = 'feature_detector_nets/cig_orig_pistol_marine_FD_64x48x6_weights.save'
+controller_network_filename = 'controller_nets/cig_orig_pistol_marine_6_norm_NEAT_delta/controller'
+test_controller_net_gen = '573'#641
 doom_scenario = "scenarios/cig_orig_pistol.wad"
 doom_config = "config/cig.cfg"
 stats_file = "_stats.txt"
+evaluation_filename = "_eval.txt"
 map1 = "map01"
 map2 = "map01"
 
-num_features = 32
+num_features = 6
 num_states = 1
 
 isTraining = False
@@ -42,6 +43,8 @@ isNEAT = True # choose between NEAT or ES-HyperNEAT
 useShapingReward = False
 isColourCorrection = False
 useActionSelection = False # whether output units are final actions or each unit forms a part of an action
+normalise_features = True
+use_delta_control = True
 
 reward_multiplier = 5
 shoot_reward = -50.0
@@ -54,17 +57,17 @@ initial_health = 99
 
 if useActionSelection:
 	# left,right, forward and shoot and pair-combinations (cig)
-	#actions_available = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1], #single actions
-	#			[1,0,1,0],[0,1,1,0], #let-right,forward double actions
-	#			[1,0,0,1],[0,1,0,1],[0,0,1,1]] #single actions+shoot
-	#left, right,forward, backward and pair-combinations (health_gathering)
 	actions_available = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1], #single actions
-				[1,0,1,0], [0,1,1,0], [1,0,0,1], [0,1,0,1]] #let-right,forward,backward double actions
+				[1,0,1,0],[0,1,1,0], #let-right,forward double actions
+				[1,0,0,1],[0,1,0,1],[0,0,1,1]] #single actions+shoot
+	#left, right,forward, backward and pair-combinations (health_gathering)
+	#actions_available = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1], #single actions
+	#			[1,0,1,0], [0,1,1,0], [1,0,0,1], [0,1,0,1]] #let-right,forward,backward double actions
 	# left, right, shoot and pair-combinations (defend_centre)
 	#actions_available = [[1,0,0],[0,1,0],[0,0,1],
 	#				[1,0,1],[0,1,1]]
 else:
-	actions_available = 4
+	actions_available = 3
 	number_actions = 3 #axis + shoot
 	input_dead_zone = 0.2
 
@@ -73,6 +76,7 @@ else:
 
 test_fitness_episodes = 2
 epochs = 1000
+evaluation_episodes = 100
 
 #load feature detector network
 fd_network = create_cnn(downsampled_y,downsampled_x,num_features)
@@ -180,30 +184,24 @@ def getAction(net,inp):
 		return actions_available[action]
 	else:
 		action = [0 for _ in range(actions_available)]
-		'''
-		current_action = 0
-		for axis in range(number_axis):
-			if output[axis] > input_dead_zone:
-				action[current_action] = 1
-			current_action += 1
-			if output[axis] < -input_dead_zone:
-				action[current_action] = 1
-			current_action += 1
-		for single_action_ in range(number_single_actions):
-			if output[number_axis + single_action_] > input_dead_zone:
-				action[current_action] = 1
-			current_action += 1
-		'''
-		if output[0] > input_dead_zone:
-			action[0] = 1
-		if output[0] < -input_dead_zone:
-			action[1] = 1
-		if output[1] > input_dead_zone:
-			action[2] = 1
-		#if output[1] < -input_dead_zone:
-		#	action[3] = 1
-		if output[2] > input_dead_zone:
-			action[3] = 1
+		if use_delta_control:
+			action[0] = int(math.floor(output[0] * 5))
+			if output[1] > input_dead_zone:
+				action[1] = 1
+			if output[2] > input_dead_zone:
+				action[2] = 1
+		else:
+			if output[0] > input_dead_zone:
+				action[0] = 1
+			if output[0] < -input_dead_zone:
+				action[1] = 1
+			if output[1] > input_dead_zone:
+				action[2] = 1
+			#if output[1] < -input_dead_zone:
+			#	action[3] = 1
+			if output[2] > input_dead_zone:
+				action[3] = 1
+		
 		return action
 
 
@@ -325,6 +323,9 @@ def evaluate(genome):
 				img = convert(s.image_buffer,isColourCorrection)
 				img = img.reshape([1, channels, downsampled_y, downsampled_x])
 				features = fd_network.predict(img).flatten()
+				if normalise_features:
+					magnitude = math.sqrt(sum(features[i]*features[i] for i in range(len(features))))
+					features = [ features[i]/magnitude  for i in range(len(features)) ]
 				ammo = g.get_game_variable(GameVariable.SELECTED_WEAPON_AMMO)
 				health = max(0,g.get_game_variable(GameVariable.HEALTH))
 				ammo_input = min(float(ammo)/40.0,1.0)
@@ -396,7 +397,12 @@ net.Load(controller_network_filename + test_controller_net_gen + '.net')
 #	orb = cv2.ORB()
 #	kp1, des1 = orb.detectAndCompute(img,None)
 
-for ep in range(100):
+#store stats
+f = open(os.path.dirname(controller_network_filename) + '/' + evaluation_filename,'w')
+f.write('total reward' + str("\n"))
+f.close()
+
+for ep in range(evaluation_episodes):
 	if ep % 2 == 0:
 		g = game
 	else:
@@ -414,6 +420,9 @@ for ep in range(100):
 		img = convert(s.image_buffer,isColourCorrection)
 		img = img.reshape([1, channels, downsampled_y, downsampled_x])
 		features = fd_network.predict(img).flatten()
+		if normalise_features:
+			magnitude = math.sqrt(sum(features[i]*features[i] for i in range(len(features))))
+			features = [ features[i]/magnitude  for i in range(len(features)) ]
 		#multistate
 		for state in range(num_states-1):
 			states[state] = states[state+1] 
@@ -429,6 +438,10 @@ for ep in range(100):
 			break
 
 	print(g.get_total_reward())
+	#store stats
+	f = open(os.path.dirname(controller_network_filename) + '/' + evaluation_filename,'a')
+	f.write(str(g.get_total_reward()) + str("\n"))
+	f.close()
 
 game.close()
 game2.close()
