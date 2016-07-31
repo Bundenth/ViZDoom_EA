@@ -63,7 +63,8 @@ def convert(img,colorCorrection=False):
 		#cv2.imshow('Doom Buffer',img)
 		#cv2.waitKey(1)
 	if channels == 1:
-		#img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+		if not colorCorrection:
+			img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
 		img = cv2.resize(img, (downsampled_x, downsampled_y) )
 		img_p = img.reshape([1,downsampled_y,downsampled_x])
 	else:
