@@ -24,30 +24,30 @@ from learning_framework import *
 import learning_framework
 
 ### general parameters
-feature_detector_file = 'feature_detector_nets/cig_orig_pistol_marine_FD_64x48x6_weights.save'
-controller_network_filename = 'controller_nets/cig_orig_pistol_marine_6_norm_NEAT_delta/controller'
-test_controller_net_gen = '573'#641
-doom_scenario = "scenarios/cig_orig_pistol.wad"
+feature_detector_file = 'feature_detector_nets/cig_orig_rocket_marine_edges_FD_64x48x32_weights.save'
+controller_network_filename = 'controller_nets/cig_orig_rocket_marine_edges_32_norm_NEAT_delta/controller'
+test_controller_net_gen = '1'#435
+doom_scenario = "scenarios/cig_orig_rocket.wad"
 doom_config = "config/cig.cfg"
 stats_file = "_stats.txt"
 evaluation_filename = "_eval.txt"
 map1 = "map01"
 map2 = "map01"
 
-num_features = 6
+num_features = 32
 num_states = 1
 
-isTraining = False
+isTraining = True
 isCig = True # whether or not the scenario is competition (cig)
 isNEAT = True # choose between NEAT or ES-HyperNEAT
 useShapingReward = False
-isColourCorrection = False
+isColourCorrection = True
 useActionSelection = False # whether output units are final actions or each unit forms a part of an action
 normalise_features = True
 use_delta_control = True
 
 reward_multiplier = 5
-shoot_reward = -50.0
+shoot_reward = -15.0
 health_kit_reward = 75.0 #75.0
 harm_reward = 0
 ammo_pack_reward = 50.0 #50.0
@@ -75,7 +75,7 @@ else:
 #actions_available = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1],[1,0,1,0],[1,0,0,1],[0,1,1,0],[0,1,0,1]]
 
 test_fitness_episodes = 2
-epochs = 1000
+epochs = 2500
 evaluation_episodes = 100
 
 #load feature detector network
@@ -93,9 +93,9 @@ params.DisjointCoeff = 1.0#
 params.ExcessCoeff = 1.0#
 params.WeightDiffCoeff = 0.4#
 params.YoungAgeTreshold = 5 #fitness multiplier for young species
-params.YoungAgeFitnessBoost = 1.35
-params.SpeciesMaxStagnation = 20 #number of generations without improvement allowed for species
-params.OldAgeTreshold = 40# 
+params.YoungAgeFitnessBoost = 1.6
+params.SpeciesMaxStagnation = 60 #number of generations without improvement allowed for species
+params.OldAgeTreshold = 120# 
 params.MinSpecies = 2 #
 params.MaxSpecies = 8 #
 params.EliteFraction = 0.1 #

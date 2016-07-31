@@ -19,7 +19,7 @@ from keras.models import model_from_json
 # image parameters
 downsampled_x = 64 #64
 downsampled_y = 48#48
-channels = 3 #channels on input image considered (GRAY8 = 1; RGB = 3)
+channels = 1 #channels on input image considered (GRAY8 = 1; RGB = 3)
 skiprate = 3
 
 class CustomDoomGame:
@@ -49,13 +49,8 @@ def start_game(game,multiplayer,visible,mode = Mode.PLAYER):
 
 # Function for converting images
 def convert(img,colorCorrection=False):
-	'''
-	#for GRAY8 images
-	img = img[0].astype(np.float32) / 255.0
-	img = cv2.resize(img, (downsampled_x, downsampled_y))
-	return img
-	'''
 	if colorCorrection:
+		'''
 		clip = (255-np.mean(img)) * 0.1#10
 		clahe = cv2.createCLAHE(clipLimit=clip, tileGridSize=(16,16))
 		img_lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
@@ -63,14 +58,20 @@ def convert(img,colorCorrection=False):
 		cl2 = clahe.apply(lab_plane)
 		img_lab[:,:,0] = cl2
 		img = cv2.cvtColor(img_lab, cv2.COLOR_LAB2BGR)
+		'''
+		img = cv2.Canny(img,200,200)
 		#cv2.imshow('Doom Buffer',img)
 		#cv2.waitKey(1)
-	
-	# for RGB images
-	img = img.astype(np.float32) / 255.0
-	img_p = []
-	for channel in range(channels):
-		img_p.append(cv2.resize(img[:,:,channel], (downsampled_x, downsampled_y)))
+	if channels == 1:
+		#img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+		img = cv2.resize(img, (downsampled_x, downsampled_y) )
+		img_p = img.reshape([1,downsampled_y,downsampled_x])
+	else:
+		# for RGB images
+		img = img.astype(np.float32) / 255.0
+		img_p = []
+		for channel in range(channels):
+			img_p.append(cv2.resize(img[:,:,channel], (downsampled_x, downsampled_y)))
 	return np.array(img_p)
 
 
@@ -79,6 +80,7 @@ def create_cnn(input_rows,input_cols,num_outputs):
 
 	# input: input_colsxinput_rows images with 1 channels
 	# this applies 32 convolution filters of size 3x3 each.
+	
 	model.add(Convolution2D(8, 3, 3,
                         border_mode='valid',
                         input_shape=(channels, input_rows, input_cols)))

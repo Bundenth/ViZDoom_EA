@@ -9,14 +9,14 @@ from time import sleep
 from learning_framework import *
 import learning_framework
 
-images_filename = "feature_images/cig_orig_pistol_marine_rgb.dat"
-doom_scenario = "scenarios/cig_orig_pistol.wad"
+images_filename = "feature_images/cig_orig_rocket_marine_edges.dat"
+doom_scenario = "scenarios/cig_orig_rocket.wad"
 doom_config = "config/cig_playable.cfg"
 map1 = "map01"
 map2 = "map01"
 
 isCig = True
-isColourCorrection = False
+isColourCorrection = True
 
 recorded_episodes = 6
 
@@ -45,7 +45,6 @@ def gatherData(training_img_set,filename,mapSelected):
 			if action[0] == 0:
 				continue
 			# Get processed image
-			# Gray8 shape is not cv2 compliant
 			img = learning_framework.convert(s.image_buffer,isColourCorrection) # [channel][rows][cols]
 			
 			training_img_set.append(img)
