@@ -23,10 +23,11 @@ from MultiNEAT import GetGenomeList, ZipFitness, EvaluateGenomeList_Serial, Eval
 from learning_framework import *
 import learning_framework
 
+
 ### general parameters
 feature_detector_file = 'feature_detector_nets/cig_orig_pistol_marine_edges_FD_64x48x32_weights.save'
 controller_network_filename = 'controller_nets/cig_orig_pistol_marine_edges_32_norm_NEAT_delta/controller'
-test_controller_net_gen = '3'#435
+test_controller_net_gen = '1'#435
 doom_scenario = "scenarios/cig_orig_pistol.wad"
 doom_config = "config/cig.cfg"
 stats_file = "_stats.txt"
@@ -47,7 +48,7 @@ normalise_features = True
 use_delta_control = True
 
 reward_multiplier = 5
-shoot_reward = -50.0
+shoot_reward = -35.0
 health_kit_reward = 75.0 #75.0
 harm_reward = 0
 ammo_pack_reward = 50.0 #50.0
