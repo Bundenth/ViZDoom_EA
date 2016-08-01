@@ -9,14 +9,14 @@ from time import sleep
 from learning_framework import *
 import learning_framework
 
-images_filename = "feature_images/cig_orig_pistol_marine_gray.dat"
+images_filename = "feature_images/cig_orig_pistol_marine_hsv.dat"
 doom_scenario = "scenarios/cig_orig_pistol.wad"
 doom_config = "config/cig_playable.cfg"
 map1 = "map01"
 map2 = "map01"
 
 isCig = True
-isColourCorrection = False
+isColourCorrection = True
 
 recorded_episodes = 6
 

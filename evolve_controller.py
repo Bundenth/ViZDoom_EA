@@ -25,9 +25,9 @@ import learning_framework
 
 
 ### general parameters
-feature_detector_file = 'feature_detector_nets/cig_orig_pistol_marine_edges_FD_64x48x32_weights.save'
-controller_network_filename = 'controller_nets/cig_orig_pistol_marine_edges_32_norm_NEAT_delta/controller'
-test_controller_net_gen = '1'#435
+feature_detector_file = 'feature_detector_nets/cig_orig_pistol_marine_hsv_FD_64x48x32_weights.save'
+controller_network_filename = 'controller_nets/cig_orig_pistol_marine_hsv_32_NEAT_delta/controller'
+test_controller_net_gen = '116'#435
 doom_scenario = "scenarios/cig_orig_pistol.wad"
 doom_config = "config/cig.cfg"
 stats_file = "_stats.txt"
@@ -44,7 +44,7 @@ isNEAT = True # choose between NEAT or ES-HyperNEAT
 useShapingReward = False
 isColourCorrection = True
 useActionSelection = False # whether output units are final actions or each unit forms a part of an action
-normalise_features = True
+normalise_features = False
 use_delta_control = True
 
 reward_multiplier = 5
@@ -94,9 +94,9 @@ params.DisjointCoeff = 1.0#
 params.ExcessCoeff = 1.0#
 params.WeightDiffCoeff = 0.4#
 params.YoungAgeTreshold = 5 #fitness multiplier for young species
-params.YoungAgeFitnessBoost = 1.6
-params.SpeciesMaxStagnation = 60 #number of generations without improvement allowed for species
-params.OldAgeTreshold = 120# 
+params.YoungAgeFitnessBoost = 1.5
+params.SpeciesMaxStagnation = 30 #number of generations without improvement allowed for species
+params.OldAgeTreshold = 50# 
 params.MinSpecies = 2 #
 params.MaxSpecies = 8 #
 params.EliteFraction = 0.1 #

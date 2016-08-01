@@ -19,7 +19,7 @@ from keras.models import model_from_json
 # image parameters
 downsampled_x = 64 #64
 downsampled_y = 48#48
-channels = 1 #channels on input image considered (GRAY8 = 1; RGB = 3)
+channels = 3 #channels on input image considered (GRAY8 = 1; RGB = 3)
 skiprate = 3
 
 class CustomDoomGame:
@@ -59,7 +59,8 @@ def convert(img,colorCorrection=False):
 		img_lab[:,:,0] = cl2
 		img = cv2.cvtColor(img_lab, cv2.COLOR_LAB2BGR)
 		'''
-		img = cv2.Canny(img,200,200)
+		img = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
+		#img = cv2.Canny(img,200,200)
 		#cv2.imshow('Doom Buffer',img)
 		#cv2.waitKey(1)
 	if channels == 1:
