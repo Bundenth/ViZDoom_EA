@@ -30,9 +30,11 @@ from learning_framework import *
 import learning_framework
 
 ### general parameters
-feature_weights_filename = 'feature_detector_nets/cig_orig_pistol_marine_hsv_FD_64x48x32_weights.save'
-images_filename = "feature_images/cig_orig_pistol_marine_hsv.dat"
-stats_file = "stats/feature_extractor_cig_orig_pistol_marine_hsv_32_stats.txt"
+feature_weights_filename = 'feature_detector_nets/cig_orig_pistol_marine_gray_FD_64x48x16_big_weights.save'
+images_filename = "feature_images/cig_orig_pistol_marine_gray_big.dat"
+stats_file = "stats/feature_extractor_cig_orig_pistol_marine_gray_big_16_stats.txt"
+
+use_normalisation = False
 
 mutation_rate = 0.0005 #0.003 probability of mutation (prob PER element)
 mutation_probability = 0.20 #probability that elite individual is mutated
@@ -42,7 +44,7 @@ weight_start = 5.0
 
 population_size = 100
 generations = 1000 #number of generations in the evolution process
-num_features = 32 #number of outputs of the CNN compressor (features to learn)
+num_features = 16 #number of outputs of the CNN compressor (features to learn)
 elite_ratio = 0.05 #proportion of top individuals that go to next generation
 
 ### FUNCTIONS
@@ -98,9 +100,12 @@ def evaluate(cnn,individual,training_img_set):
 		output = cnn.predict(np.array(img_p))
 		output = output.flatten()
 		#Normalized Data
-		magnitude = math.sqrt(sum(output[i]*output[i] for i in range(len(output))))
-		normalised = [ output[i]/magnitude  for i in range(len(output)) ]
-		feature_vectors.append(normalised)
+		if use_normalisation:
+			magnitude = math.sqrt(sum(output[i]*output[i] for i in range(len(output))))
+			normalised = [ output[i]/magnitude  for i in range(len(output)) ]
+			feature_vectors.append(normalised)
+		else:
+			feature_vectors.append(output)
 
 	#calculate fitness
 	#approximation of euclidean distances (it's counting distances to i and i points)
@@ -219,11 +224,12 @@ for img in training_img_set:
 	output = cnn.predict(np.array(img_p))
 	output = output.flatten()
 	#Normalized Data
-	magnitude = math.sqrt(sum(output[i]*output[i] for i in range(len(output))))
-	normalised = [ output[i]/magnitude  for i in range(len(output)) ]
-	if magnitude == 0:
-		print("zero")
-	feature_vectors.append(normalised)
+	if use_normalisation:
+		magnitude = math.sqrt(sum(output[i]*output[i] for i in range(len(output))))
+		normalised = [ output[i]/magnitude  for i in range(len(output)) ]
+		feature_vectors.append(normalised)
+	else:
+		feature_vectors.append(output)
 
 #calculate fitness
 dist = scipy.spatial.distance.cdist(feature_vectors,feature_vectors,'euclidean')

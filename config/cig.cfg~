@@ -17,11 +17,10 @@ window_visible = false
 # Available buttons
 available_buttons = 
 	{ 
-		#TURN_LEFT
-		#TURN_RIGHT
-		#MOVE_FORWARD
-		TURN_LEFT_RIGHT_DELTA
-		MOVE_FORWARD_BACKWARD_DELTA
+		TURN_LEFT
+		TURN_RIGHT
+		#TURN_LEFT_RIGHT_DELTA
+		MOVE_FORWARD
 		ATTACK
 	}
 

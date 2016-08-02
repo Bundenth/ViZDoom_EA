@@ -25,9 +25,9 @@ import learning_framework
 
 
 ### general parameters
-feature_detector_file = 'feature_detector_nets/cig_orig_pistol_marine_hsv_FD_64x48x32_weights.save'
-controller_network_filename = 'controller_nets/cig_orig_pistol_marine_hsv_32_NEAT_delta/controller'
-test_controller_net_gen = '116'#435
+feature_detector_file = 'feature_detector_nets/cig_orig_pistol_marine_gray_FD_64x48x16_big_weights.save'
+controller_network_filename = 'controller_nets/cig_orig_pistol_marine_gray_16_big_NEAT_delta/controller'
+test_controller_net_gen = '1'#435
 doom_scenario = "scenarios/cig_orig_pistol.wad"
 doom_config = "config/cig.cfg"
 stats_file = "_stats.txt"
@@ -35,14 +35,14 @@ evaluation_filename = "_eval.txt"
 map1 = "map01"
 map2 = "map01"
 
-num_features = 32
+num_features = 16
 num_states = 1
 
 isTraining = True
 isCig = True # whether or not the scenario is competition (cig)
 isNEAT = True # choose between NEAT or ES-HyperNEAT
 useShapingReward = False
-isColourCorrection = True
+isColourCorrection = False
 useActionSelection = False # whether output units are final actions or each unit forms a part of an action
 normalise_features = False
 use_delta_control = True
