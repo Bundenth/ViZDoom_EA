@@ -82,7 +82,7 @@ def create_cnn(input_rows,input_cols,num_outputs):
 
 	# input: input_colsxinput_rows images with 1 channels
 	# this applies 32 convolution filters of size 3x3 each.
-	'''
+	
 	model.add(Convolution2D(8, 3, 3,
                         border_mode='valid',
                         input_shape=(channels, input_rows, input_cols)))
@@ -120,7 +120,7 @@ def create_cnn(input_rows,input_cols,num_outputs):
 	model.compile(loss='categorical_crossentropy',
 		optimizer='adadelta',
 		metrics=['accuracy'])
-	
+	'''
 	return model
 
 

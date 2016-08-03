@@ -9,8 +9,8 @@ from time import sleep
 from learning_framework import *
 import learning_framework
 
-images_filename = "feature_images/cig_orig_pistol_marine_gray_big.dat"
-doom_scenario = "scenarios/cig_orig_pistol.wad"
+images_filename = "feature_images/cig_orig_rocket_marine_gray.dat"
+doom_scenario = "scenarios/cig_orig_rocket.wad"
 doom_config = "config/cig_playable.cfg"
 map1 = "map01"
 map2 = "map01"
@@ -18,7 +18,7 @@ map2 = "map01"
 isCig = True
 isColourCorrection = False
 
-recorded_episodes = 2
+recorded_episodes = 6
 
 ### FUNCTIONS
 # Gather image from play
@@ -40,10 +40,10 @@ def gatherData(training_img_set,filename,mapSelected):
 			game.advance_action(skiprate+1)
 			action = game.get_last_action()
 			
-			if not s.number % 8 == 0 or all(v==0 for v in action):
-				continue
-			#if action[0] == 0:
+			#if not s.number % 8 == 0 or all(v==0 for v in action):
 			#	continue
+			if action[0] == 0:
+				continue
 			# Get processed image
 			img = learning_framework.convert(s.image_buffer,isColourCorrection) # [channel][rows][cols]
 			
