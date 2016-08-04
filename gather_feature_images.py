@@ -9,8 +9,8 @@ from time import sleep
 from learning_framework import *
 import learning_framework
 
-images_filename = "feature_images/cig_orig_rocket_marine_gray.dat"
-doom_scenario = "scenarios/cig_orig_rocket.wad"
+images_filename = "feature_images/cig_orig_pistol_marine_gray.dat"
+doom_scenario = "scenarios/cig_orig_pistol.wad"
 doom_config = "config/cig_playable.cfg"
 map1 = "map01"
 map2 = "map01"

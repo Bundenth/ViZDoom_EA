@@ -25,9 +25,9 @@ import learning_framework
 
 
 ### general parameters
-feature_detector_file = 'feature_detector_nets/cig_orig_pistol_marine_gray_FD_64x48x12_weights.save'
-controller_network_filename = 'controller_nets/cig_orig_pistol_marine_gray_12_NEAT_delta/controller'
-test_controller_net_gen = '365'#435
+feature_detector_file = 'feature_detector_nets/cig_orig_pistol_marine_gray_FD_64x48x32_weights.save'
+controller_network_filename = 'controller_nets/cig_orig_pistol_marine_gray_32_FSNEAT_actionSelection/controller'
+test_controller_net_gen = '1'#435
 doom_scenario = "scenarios/cig_orig_pistol.wad"
 doom_config = "config/cig.cfg"
 stats_file = "_stats.txt"
@@ -35,17 +35,18 @@ evaluation_filename = "_eval.txt"
 map1 = "map01"
 map2 = "map01"
 
-num_features = 12
+num_features = 32
 num_states = 1
 
-isTraining = False
+isTraining = True
 isCig = True # whether or not the scenario is competition (cig)
 isNEAT = True # choose between NEAT or ES-HyperNEAT
+isFS_NEAT = True # False: start with all inputs linked to all outputs; True: random input-output links
 useShapingReward = False
 isColourCorrection = False
-useActionSelection = False # whether output units are final actions or each unit forms a part of an action
+useActionSelection = True # whether output units are final actions or each unit forms a part of an action
 normalise_features = False
-use_delta_control = True
+use_delta_control = False
 
 reward_multiplier = 5
 shoot_reward = -35.0
@@ -102,12 +103,12 @@ params.MaxSpecies = 8 #
 params.EliteFraction = 0.1 #
 params.RouletteWheelSelection = False 
 params.CrossoverRate = 0.70#0.70
-params.InterspeciesCrossoverRate = 0.001#
+params.InterspeciesCrossoverRate = 0.01#
 params.MutateRemLinkProb = 0.015 
 params.RecurrentProb = 0.0015
 params.OverallMutationRate = 0.15 #0.15
-params.MutateAddLinkProb = 0.095#0.095
-params.MutateAddNeuronProb = 0.03 #0.03
+params.MutateAddLinkProb = 0.1#0.095
+params.MutateAddNeuronProb = 0.02 #0.03
 params.MutateWeightsProb = 0.85 #
 params.WeightMutationMaxPower = 0.5 # 
 params.WeightReplacementMaxPower = 1.0 
@@ -229,14 +230,14 @@ def getbest(i,controller_network_filename):
 			output_units = len(actions_available)
 		else:
 			output_units = number_actions
-		g = NEAT.Genome(0, num_features*num_states+3, 0, output_units, False, NEAT.ActivationFunction.TANH_CUBIC, 
+		g = NEAT.Genome(0, num_features*num_states+3, 0, output_units, isFS_NEAT, NEAT.ActivationFunction.TANH_CUBIC, 
 			NEAT.ActivationFunction.TANH, 0, params)
 	else:
 		g = NEAT.Genome(0,
 			substrate.GetMinCPPNInputs(),
 			0,
 			substrate.GetMinCPPNOutputs(),
-			False,
+			isFS_NEAT,
 			NEAT.ActivationFunction.TANH_CUBIC,
 			NEAT.ActivationFunction.TANH,
 			0,
