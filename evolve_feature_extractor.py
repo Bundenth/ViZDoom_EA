@@ -30,11 +30,12 @@ from learning_framework import *
 import learning_framework
 
 ### general parameters
-feature_weights_filename = 'feature_detector_nets/cig_orig_pistol_marine_gray_FD_64x48x32_weights.save'
-images_filename = "feature_images/cig_orig_pistol_marine_gray.dat"
-stats_file = "stats/feature_extractor_cig_orig_pistol_marine_gray_32_stats.txt"
+feature_weights_filename = 'feature_detector_nets/cig_orig_pistol_marine_rgb_FD_64x48x32_weights.save'
+images_filename = "feature_images/cig_orig_pistol_marine_rgb.dat"
+stats_file = "stats/feature_extractor_cig_orig_pistol_marine_rgb_32_stats.txt"
 
-use_normalisation = False
+isRandom = False # whether the network generated is randomised or evolved
+use_normalisation = True
 
 mutation_rate = 0.0005 #0.003 probability of mutation (prob PER element)
 mutation_probability = 0.20 #probability that elite individual is mutated
@@ -201,11 +202,22 @@ def evolve_feature_extractor(training_data_filename,weights_filename):
 		population = new_generation
 
 
+def storeRandomNetwork():
+	cnn = create_cnn(downsampled_y,downsampled_x,num_features)
+	for layer in cnn.layers:
+		weights = copy.deepcopy(layer.get_weights())
+		randomise_weights(weights)
+		layer.set_weights(weights)
+	cnn.save_weights(feature_weights_filename,overwrite=True)
+
 ######################################################################
 ######################################################################
 
 #evolve weights of Feature extractor (CNN) using Evolution over training set
-evolve_feature_extractor(images_filename,feature_weights_filename)
+if isRandom:
+	storeRandomNetwork()
+else:
+	evolve_feature_extractor(images_filename,feature_weights_filename)
 
 #testing
 

@@ -25,8 +25,8 @@ import learning_framework
 
 
 ### general parameters
-feature_detector_file = 'feature_detector_nets/cig_orig_pistol_marine_gray_FD_64x48x32_weights.save'
-controller_network_filename = 'controller_nets/cig_orig_pistol_marine_gray_32_FSNEAT_actionSelection/controller'
+feature_detector_file = 'feature_detector_nets/cig_orig_pistol_marine_gray_FD_64x48x12_weights.save'
+controller_network_filename = 'controller_nets/cig_orig_pistol_marine_gray_12_NEAT/controller'
 test_controller_net_gen = '1'#435
 doom_scenario = "scenarios/cig_orig_pistol.wad"
 doom_config = "config/cig.cfg"
@@ -35,16 +35,16 @@ evaluation_filename = "_eval.txt"
 map1 = "map01"
 map2 = "map01"
 
-num_features = 32
+num_features = 12
 num_states = 1
 
 isTraining = True
 isCig = True # whether or not the scenario is competition (cig)
 isNEAT = True # choose between NEAT or ES-HyperNEAT
-isFS_NEAT = True # False: start with all inputs linked to all outputs; True: random input-output links
+isFS_NEAT = False # False: start with all inputs linked to all outputs; True: random input-output links
 useShapingReward = False
 isColourCorrection = False
-useActionSelection = True # whether output units are final actions or each unit forms a part of an action
+useActionSelection = False # whether output units are final actions or each unit forms a part of an action
 normalise_features = False
 use_delta_control = False
 
@@ -69,7 +69,7 @@ if useActionSelection:
 	#actions_available = [[1,0,0],[0,1,0],[0,0,1],
 	#				[1,0,1],[0,1,1]]
 else:
-	actions_available = 3
+	actions_available = 4
 	number_actions = 3 #axis + shoot
 	input_dead_zone = 0.2
 
@@ -104,11 +104,11 @@ params.EliteFraction = 0.1 #
 params.RouletteWheelSelection = False 
 params.CrossoverRate = 0.70#0.70
 params.InterspeciesCrossoverRate = 0.01#
-params.MutateRemLinkProb = 0.015 
+params.MutateRemLinkProb = 0.035
 params.RecurrentProb = 0.0015
 params.OverallMutationRate = 0.15 #0.15
-params.MutateAddLinkProb = 0.1#0.095
-params.MutateAddNeuronProb = 0.02 #0.03
+params.MutateAddLinkProb = 0.09#0.095
+params.MutateAddNeuronProb = 0.03 #0.03
 params.MutateWeightsProb = 0.85 #
 params.WeightMutationMaxPower = 0.5 # 
 params.WeightReplacementMaxPower = 1.0 
@@ -231,7 +231,7 @@ def getbest(i,controller_network_filename):
 		else:
 			output_units = number_actions
 		g = NEAT.Genome(0, num_features*num_states+3, 0, output_units, isFS_NEAT, NEAT.ActivationFunction.TANH_CUBIC, 
-			NEAT.ActivationFunction.TANH, 0, params)
+			NEAT.ActivationFunction.TANH_CUBIC, 0, params)
 	else:
 		g = NEAT.Genome(0,
 			substrate.GetMinCPPNInputs(),
@@ -239,7 +239,7 @@ def getbest(i,controller_network_filename):
 			substrate.GetMinCPPNOutputs(),
 			isFS_NEAT,
 			NEAT.ActivationFunction.TANH_CUBIC,
-			NEAT.ActivationFunction.TANH,
+			NEAT.ActivationFunction.TANH_CUBIC,
 			0,
 			params)
 	pop = NEAT.Population(g, params, True, 1.0, i)
