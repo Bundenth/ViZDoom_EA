@@ -30,23 +30,31 @@ from learning_framework import *
 import learning_framework
 
 ### general parameters
-feature_weights_filename = 'feature_detector_nets/cig_orig_pistol_marine_rgb_FD_64x48x32_weights.save'
-images_filename = "feature_images/cig_orig_pistol_marine_rgb.dat"
-stats_file = "stats/feature_extractor_cig_orig_pistol_marine_rgb_32_stats.txt"
+feature_weights_filename = 'feature_detector_nets/cig_orig_pistol_cacodemon_FD_64x48x5_shannon_b_weights.save'
+images_filename = "feature_images/cig_orig_pistol_cacodemon_rgb.dat"
+stats_file = "stats/feature_extractor_cig_orig_pistol_cacodemon_edge_5_shannon_stats.txt"
 
 isRandom = False # whether the network generated is randomised or evolved
-use_normalisation = True
 
-mutation_rate = 0.0005 #0.003 probability of mutation (prob PER element)
-mutation_probability = 0.20 #probability that elite individual is mutated
-mutation_strength = 3.0 #1 limit on how much to change a mutated element
-novelty_mutation_rate = 0.0001 # mutation that randomises all weights in a sublayer (prob per layer)
-weight_start = 5.0
+use_shannon_diversity = True # pressure selection on diversity of unique classifications (True) or in vector distances (False)
+binary_encoding = True # whether to use binary encoding (True) or weighted average of outputs when calculating diversity
+
+mutation_rate = 0.001 #0.0005 probability of mutation (prob PER element)
+mutation_probability = 0.35 #probability that elite individual is mutated
+mutation_strength = 3.0 #3.0 limit on how much to change a mutated element
+novelty_mutation_rate = 0.001 # mutation that randomises all weights in a sublayer (prob per layer)
+weight_start = 5.0 # 5.0
 
 population_size = 100
 generations = 1000 #number of generations in the evolution process
-num_features = 32 #number of outputs of the CNN compressor (features to learn)
+num_features = 5 #number of outputs of the CNN compressor (features to learn)
 elite_ratio = 0.05 #proportion of top individuals that go to next generation
+
+
+if use_shannon_diversity:
+	output_activation_function = 'sigmoid' # softmax (all sum to 1), linear[-R,R], relu[0,R], sigmoid[0,1]
+else:
+	output_activation_function = 'tanh'
 
 ### FUNCTIONS
 
@@ -66,19 +74,20 @@ def crossover(parent_a,parent_b):
 					parent_a[i] = parent_b[i]
 	'''
 
-
 def mutation(offspring):
 	if(type(offspring) is np.ndarray or type(offspring) is list):
 		for i in range(len(offspring)):
 			if(type(offspring[i]) is np.ndarray or type(offspring[i]) is list):
 				if(random.random() < novelty_mutation_rate):
 					randomise_weights(offspring[i])
-					#print("random")
 				else:
 					mutation(offspring[i])
 			else:
 				if(random.random() < mutation_rate):
-					offspring[i] += random.uniform(-mutation_strength,mutation_strength)
+					if random.random() < 0.5:
+						offspring[i] += random.uniform(-mutation_strength,mutation_strength)
+					else:
+						offspring[i] = random.uniform(-weight_start,weight_start)
 
 def randomise_weights(cnn):
 	if(type(cnn) is np.ndarray or type(cnn) is list):
@@ -100,20 +109,52 @@ def evaluate(cnn,individual,training_img_set):
 		img_p = img.reshape([1, channels, downsampled_y, downsampled_x])
 		output = cnn.predict(np.array(img_p))
 		output = output.flatten()
-		#Normalized Data
-		if use_normalisation:
+		if use_shannon_diversity:
+			classification = 0
+			if binary_encoding:
+				##binary encoding of outputs
+				output[output>0.8] = 1
+				output[output<=0.8] = 0
+				for n in range(len(output)):
+					classification += (2 ** n) * output[n]
+			else:
+				#weighted average of outputs
+				weighted_average = 0.0
+				accummulated_weight = 0.0
+				for k in range(len(output)):
+					accummulated_weight += output[k]
+					weighted_average += k * output[k]
+				if accummulated_weight == 0:
+					classification = int(num_features / 2)
+				else:
+					classification = int(weighted_average / accummulated_weight)
+			feature_vectors.append(classification)
+		else:
+			#Normalized Data
 			magnitude = math.sqrt(sum(output[i]*output[i] for i in range(len(output))))
 			normalised = [ output[i]/magnitude  for i in range(len(output)) ]
 			feature_vectors.append(normalised)
-		else:
-			feature_vectors.append(output)
-
+		
 	#calculate fitness
-	#approximation of euclidean distances (it's counting distances to i and i points)
-	dist = scipy.spatial.distance.cdist(feature_vectors,feature_vectors,'euclidean')
-	iu = np.triu_indices_from(dist,1)
-	distances = dist[iu]
-	fitness = np.mean(distances) + min(distances)
+	if use_shannon_diversity:
+		fitness = 0.0
+		visited = []
+		for m in range(len(feature_vectors)):
+			m_prop = 0
+			if binary_encoding:
+				if not feature_vectors[m] in visited:
+					visited.append(feature_vectors[m])
+					m_prop = float(feature_vectors.count(feature_vectors[m])) / float(len(feature_vectors))
+			else:
+				m_prop = float(feature_vectors.count(m)) / float(len(feature_vectors))
+			if not m_prop == 0:
+				fitness += m_prop * np.log(m_prop)
+		fitness = -fitness
+	else:
+		dist = scipy.spatial.distance.cdist(feature_vectors,feature_vectors,'euclidean')
+		iu = np.triu_indices_from(dist,1)
+		distances = dist[iu]
+		fitness = np.mean(distances) + min(distances)
 	
 	return fitness
 
@@ -127,10 +168,11 @@ def evolve_feature_extractor(training_data_filename,weights_filename):
 	print("Loading training data...")
 	f = open(training_data_filename,'rb')
 	training_img_set = cPickle.load(f)
+	print('Length of training set: ',len(training_img_set))
 	f.close()
 	
 	print("Generating CNN...")
-	cnn = create_cnn(downsampled_y,downsampled_x,num_features)
+	cnn = create_cnn(downsampled_y,downsampled_x,num_features,output_activation_function)
 
 	print("Creating initial population...")
 	population = []
@@ -203,7 +245,7 @@ def evolve_feature_extractor(training_data_filename,weights_filename):
 
 
 def storeRandomNetwork():
-	cnn = create_cnn(downsampled_y,downsampled_x,num_features)
+	cnn = create_cnn(downsampled_y,downsampled_x,num_features,output_activation_function)
 	for layer in cnn.layers:
 		weights = copy.deepcopy(layer.get_weights())
 		randomise_weights(weights)
@@ -214,6 +256,7 @@ def storeRandomNetwork():
 ######################################################################
 
 #evolve weights of Feature extractor (CNN) using Evolution over training set
+
 if isRandom:
 	storeRandomNetwork()
 else:
@@ -224,7 +267,7 @@ else:
 f = open(images_filename,'rb')
 training_img_set = cPickle.load(f)
 	
-cnn = create_cnn(downsampled_y,downsampled_x,num_features)
+cnn = create_cnn(downsampled_y,downsampled_x,num_features,output_activation_function)
 
 cnn.load_weights(feature_weights_filename)
 
@@ -235,19 +278,53 @@ for img in training_img_set:
 	img_p = img.reshape([1, channels, downsampled_y, downsampled_x])
 	output = cnn.predict(np.array(img_p))
 	output = output.flatten()
-	#Normalized Data
-	if use_normalisation:
+	if use_shannon_diversity:
+		classification = 0
+		if binary_encoding:
+			##binary encoding of outputs
+			output[output>0.8] = 1
+			output[output<=0.8] = 0
+			for n in range(len(output)):
+				classification += (2 ** n) * output[n]
+		else:
+			#weighted average of outputs
+			weighted_average = 0.0
+			accummulated_weight = 0.0
+			for k in range(len(output)):
+				accummulated_weight += output[k]
+				weighted_average += k * output[k]
+			if accummulated_weight == 0:
+				classification = int(num_features / 2)
+			else:
+				classification = int(weighted_average / accummulated_weight)
+		feature_vectors.append(classification)
+	else:
+		#Normalized Data
 		magnitude = math.sqrt(sum(output[i]*output[i] for i in range(len(output))))
 		normalised = [ output[i]/magnitude  for i in range(len(output)) ]
 		feature_vectors.append(normalised)
-	else:
-		feature_vectors.append(output)
-
+	
 #calculate fitness
-dist = scipy.spatial.distance.cdist(feature_vectors,feature_vectors,'euclidean')
-iu = np.triu_indices_from(dist,1)
-distances = dist[iu]
-fitness = min(distances) + np.mean(distances)
+if use_shannon_diversity:
+	fitness = 0.0
+	visited = []
+	for m in range(len(feature_vectors)):
+		m_prop = 0
+		if binary_encoding:
+			if not feature_vectors[m] in visited:
+				visited.append(feature_vectors[m])
+				m_prop = float(feature_vectors.count(feature_vectors[m])) / float(len(feature_vectors))
+		else:
+			m_prop = float(feature_vectors.count(m)) / float(len(feature_vectors))
+		if not m_prop == 0:
+			fitness += m_prop * np.log(m_prop)
+	fitness = -fitness
+	print(fitness)
+else:
+	dist = scipy.spatial.distance.cdist(feature_vectors,feature_vectors,'euclidean')
+	iu = np.triu_indices_from(dist,1)
+	distances = dist[iu]
+	fitness = np.mean(distances) + min(distances)
 
-print(min(distances),np.mean(distances),max(distances))
+	print(min(distances),np.mean(distances),max(distances))
 

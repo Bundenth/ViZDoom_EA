@@ -35,11 +35,11 @@ cnn_weights_filename = 'supervised_CNN/cig_orig_pistol_marine_cnn_weights.h5'
 isCig = True
 
 # what task to do
-gather_data = True 
-trainOrLoad = True #True for training, False for loading pretrained network
+gather_data = False 
+trainOrLoad = False #True for training, False for loading pretrained network
 
 training_batch = 64
-training_epochs = 512
+training_epochs = 1000
 
 episodes_recorded = 20																							
 number_actions = 4
@@ -107,19 +107,20 @@ def generate_network():
 	
 	# input: 144x256 images with 1 channels -> (1, 100, 100) tensors.
 	# this applies 32 convolution filters of size 3x3 each.
-	model.add(Convolution2D(24, 3, 3,
+	model.add(Convolution2D(24, 5, 5,
                         border_mode='valid',
                         input_shape=(channels, downsampled_y, downsampled_x)))
 	model.add(Activation('relu'))
+	model.add(Convolution2D(32, 4, 4))
+	model.add(Activation('relu'))
 	model.add(Convolution2D(32, 3, 3))
 	model.add(Activation('relu'))
-	model.add(MaxPooling2D(pool_size=(2, 2)))
-	model.add(Dropout(0.25))
+	#model.add(Dropout(0.25))
 
 	model.add(Flatten())
-	model.add(Dense(128))
+	model.add(Dense(256))
 	model.add(Activation('relu'))
-	model.add(Dropout(0.5))
+	#model.add(Dropout(0.5))
 	model.add(Dense(number_actions))
 	model.add(Activation('softmax'))
 	model.compile(loss='categorical_crossentropy',
@@ -153,6 +154,7 @@ def train_network(net):
 	print("Loaded training datapoints:", len(tr))
 	print("Loaded labels:", len(lb))
 	tr = np.array(tr).reshape([len(tr), channels, downsampled_y, downsampled_x])
+	lb = np.array(lb)[:,0:number_actions] ########################### TEMPORARY?
 	net.fit(tr, np.array(lb), batch_size=training_batch, nb_epoch=training_epochs, verbose=1)
 	loss_and_metrics = net.evaluate(np.array(tr), np.array(lb), batch_size=32)
 	net.save_weights(cnn_weights_filename,overwrite=True)
@@ -194,8 +196,8 @@ for i in range(test_episodes):
         network_input = []
         network_input.append(img)
         output = cnn_network.predict(img)#np.array(network_input))
-        output[output>0.5] = 1
-        output[output<=0.5] = 0
+        output[output>0.4] = 1
+        output[output<=0.4] = 0
         output = output.flatten()
         print("Action selected:",output)
         action = [0 for _ in range(number_actions)]

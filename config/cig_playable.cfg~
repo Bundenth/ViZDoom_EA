@@ -7,7 +7,7 @@ episode_timeout = 1000
 
 # Rendering options
 screen_resolution = RES_640X480
-screen_format = GRAY8
+screen_format = RGB24
 render_hud = false
 render_crosshair = false
 render_weapon = true
@@ -22,10 +22,10 @@ available_buttons =
 		TURN_LEFT
 		TURN_RIGHT
 		MOVE_FORWARD
+		ATTACK
 		MOVE_BACKWARD
 		TURN_LEFT_RIGHT_DELTA
 		MOVE_FORWARD_BACKWARD_DELTA
-		ATTACK
 		#LOOK_UP_DOWN_DELTA
 	}
 

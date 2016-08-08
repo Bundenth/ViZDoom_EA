@@ -19,7 +19,7 @@ from keras.models import model_from_json
 # image parameters
 downsampled_x = 64 #64
 downsampled_y = 48#48
-channels = 1 #channels on input image considered (GRAY8 = 1; RGB = 3)
+channels = 3 #channels on input image considered (GRAY8 = 1; RGB = 3)
 skiprate = 3
 
 class CustomDoomGame:
@@ -48,27 +48,33 @@ def start_game(game,multiplayer,visible,mode = Mode.PLAYER):
 		game.init()
 
 # Function for converting images
-def convert(img,colorCorrection=False):
-	if colorCorrection:
-		'''
-		clip = (255-np.mean(img)) * 0.1#10
-		clahe = cv2.createCLAHE(clipLimit=clip, tileGridSize=(16,16))
-		img_lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
-		lab_plane = img_lab[:,:,0]
-		cl2 = clahe.apply(lab_plane)
-		img_lab[:,:,0] = cl2
-		img = cv2.cvtColor(img_lab, cv2.COLOR_LAB2BGR)
-		'''
-		img = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
-		#img = cv2.Canny(img,200,200)
-		#cv2.imshow('Doom Buffer',img)
-		#cv2.waitKey(1)
-	if channels == 1:
+def convert(img,colorCorrection=False,num_channels=0):
+	if num_channels == 0:
+		num_channels = channels
+	
+	if num_channels == 1:
 		if not colorCorrection:
 			img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+		else:
+			img = cv2.Canny(img,200,200)
+			#cv2.imshow('Doom Buffer',img)
+			#cv2.waitKey(1)
 		img = cv2.resize(img, (downsampled_x, downsampled_y) )
 		img_p = img.reshape([1,downsampled_y,downsampled_x])
 	else:
+		if colorCorrection:
+			'''
+			clip = (255-np.mean(img)) * 0.1#10
+			clahe = cv2.createCLAHE(clipLimit=clip, tileGridSize=(16,16))
+			img_lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+			lab_plane = img_lab[:,:,0]
+			cl2 = clahe.apply(lab_plane)
+			img_lab[:,:,0] = cl2
+			img = cv2.cvtColor(img_lab, cv2.COLOR_LAB2BGR)
+			'''
+			img = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
+			#cv2.imshow('Doom Buffer',img)
+			#cv2.waitKey(1)
 		# for RGB images
 		img = img.astype(np.float32) / 255.0
 		img_p = []
@@ -77,12 +83,11 @@ def convert(img,colorCorrection=False):
 	return np.array(img_p)
 
 
-def create_cnn(input_rows,input_cols,num_outputs):
+def create_cnn(input_rows,input_cols,num_outputs,final_activation='tanh'):
 	model = Sequential()
 
 	# input: input_colsxinput_rows images with 1 channels
 	# this applies 32 convolution filters of size 3x3 each.
-	
 	model.add(Convolution2D(8, 3, 3,
                         border_mode='valid',
                         input_shape=(channels, input_rows, input_cols)))
@@ -94,28 +99,28 @@ def create_cnn(input_rows,input_cols,num_outputs):
 	model.add(Convolution2D(6, 2, 2))
 	model.add(Activation('relu'))
 	model.add(MaxPooling2D(pool_size=(2, 2))) #8x6
-	#model.add(Convolution2D(3, 2, 2))
-	#model.add(Activation('tanh'))
-	#model.add(MaxPooling2D(pool_size=(2, 2))) #4x3
 	model.add(Flatten())
 	model.add(Dense(num_outputs))
-	model.add(Activation('tanh')) # num_outputs
+	model.add(Activation(final_activation)) # num_outputs
 	
 	model.compile(loss='categorical_crossentropy',
 		optimizer='adadelta',
 		metrics=['accuracy'])
 	'''
-	model.add(Convolution2D(18, 6, 6,
+	model.add(Convolution2D(12, 6, 6,
 			border_mode='valid',
 			input_shape=(channels, input_rows, input_cols)))
 	model.add(Activation('relu'))
-	model.add(Convolution2D(24, 4, 4))
+	model.add(MaxPooling2D(pool_size=(2, 2)))
+	model.add(Convolution2D(16, 4, 4))
 	model.add(Activation('relu'))
-	model.add(Convolution2D(24, 3, 3))
+	model.add(Convolution2D(18, 3, 3))
 	model.add(Activation('relu'))
 	model.add(Flatten())
+	model.add(Dense(96))
+	model.add(Activation('relu')) # num_outputs
 	model.add(Dense(num_outputs))
-	model.add(Activation('tanh')) # num_outputs
+	model.add(Activation(final_activation)) # num_outputs
 	
 	model.compile(loss='categorical_crossentropy',
 		optimizer='adadelta',

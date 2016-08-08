@@ -25,8 +25,8 @@ import learning_framework
 
 
 ### general parameters
-feature_detector_file = 'feature_detector_nets/cig_orig_pistol_marine_gray_FD_64x48x12_weights.save'
-controller_network_filename = 'controller_nets/cig_orig_pistol_marine_gray_12_NEAT/controller'
+feature_detector_file = 'feature_detector_nets/cig_orig_pistol_cacodemon_FD_64x48x5_shannon_b_weights.save'
+controller_network_filename = 'controller_nets/cig_orig_pistol_cacodemon_5_shannon_b_NEAT_actionSelection/controller'
 test_controller_net_gen = '1'#435
 doom_scenario = "scenarios/cig_orig_pistol.wad"
 doom_config = "config/cig.cfg"
@@ -35,7 +35,7 @@ evaluation_filename = "_eval.txt"
 map1 = "map01"
 map2 = "map01"
 
-num_features = 12
+num_features = 5
 num_states = 1
 
 isTraining = True
@@ -44,9 +44,9 @@ isNEAT = True # choose between NEAT or ES-HyperNEAT
 isFS_NEAT = False # False: start with all inputs linked to all outputs; True: random input-output links
 useShapingReward = False
 isColourCorrection = False
-useActionSelection = False # whether output units are final actions or each unit forms a part of an action
-normalise_features = False
+useActionSelection = True # whether output units are final actions or each unit forms a part of an action
 use_delta_control = False
+use_shannon_diversity = True
 
 reward_multiplier = 5
 shoot_reward = -35.0
@@ -56,6 +56,11 @@ ammo_pack_reward = 50.0 #50.0
 death_reward = 0.0
 
 initial_health = 99
+
+if use_shannon_diversity:
+	output_activation_function = 'sigmoid'
+else:
+	output_activation_function = 'tanh'
 
 if useActionSelection:
 	# left,right, forward and shoot and pair-combinations (cig)
@@ -81,7 +86,7 @@ epochs = 2500
 evaluation_episodes = 100
 
 #load feature detector network
-fd_network = create_cnn(downsampled_y,downsampled_x,num_features)
+fd_network = create_cnn(downsampled_y,downsampled_x,num_features,output_activation_function)
 fd_network.load_weights(feature_detector_file)
 
 #NEAT parameters and initialisation
@@ -118,8 +123,8 @@ params.ActivationAMutationMaxPower = 0.35
 params.MutateNeuronActivationTypeProb = 0.03 #
 params.ActivationFunction_SignedSigmoid_Prob = 1.0;
 params.ActivationFunction_UnsignedSigmoid_Prob = 0.0;
-params.ActivationFunction_Tanh_Prob = 1.0;
-params.ActivationFunction_TanhCubic_Prob = 0.0;
+params.ActivationFunction_Tanh_Prob = 0.0;
+params.ActivationFunction_TanhCubic_Prob = 1.0;
 params.ActivationFunction_SignedStep_Prob = 0.0;
 params.ActivationFunction_UnsignedStep_Prob = 0.0;
 params.ActivationFunction_SignedGauss_Prob = 1.0;
@@ -325,13 +330,10 @@ def evaluate(genome):
 				img = convert(s.image_buffer,isColourCorrection)
 				img = img.reshape([1, channels, downsampled_y, downsampled_x])
 				features = fd_network.predict(img).flatten()
-				if normalise_features:
-					magnitude = math.sqrt(sum(features[i]*features[i] for i in range(len(features))))
-					features = [ features[i]/magnitude  for i in range(len(features)) ]
 				ammo = g.get_game_variable(GameVariable.SELECTED_WEAPON_AMMO)
 				health = max(0,g.get_game_variable(GameVariable.HEALTH))
 				ammo_input = min(float(ammo)/40.0,1.0)
-				health_input = float(health)/100.0
+				health_input = min(float(health)/100.0,1.0)
 				#multistate
 				for state in range(num_states-1):
 					states[state] = states[state+1] 
@@ -418,13 +420,10 @@ for ep in range(evaluation_episodes):
 		ammo = g.get_game_variable(GameVariable.SELECTED_WEAPON_AMMO)
 		health = max(0,g.get_game_variable(GameVariable.HEALTH))
 		ammo_input = min(float(ammo)/40.0,1.0)
-		health_input = float(health)/100.0
+		health_input = min(float(health)/100.0,1.0)
 		img = convert(s.image_buffer,isColourCorrection)
 		img = img.reshape([1, channels, downsampled_y, downsampled_x])
 		features = fd_network.predict(img).flatten()
-		if normalise_features:
-			magnitude = math.sqrt(sum(features[i]*features[i] for i in range(len(features))))
-			features = [ features[i]/magnitude  for i in range(len(features)) ]
 		#multistate
 		for state in range(num_states-1):
 			states[state] = states[state+1] 
