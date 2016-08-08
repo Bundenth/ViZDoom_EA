@@ -11,8 +11,8 @@ import learning_framework
 
 # supports gathering 2 types of images simultaneously
 # and from more than one map
-images_filename_1 = "feature_images/cig_orig_pistol_cacodemon_rgb.dat"
-images_filename_2 = "feature_images/cig_orig_pistol_cacodemon_rgb.dat"
+images_filename_1 = "feature_images/cig_orig_pistol_marine_rgb.dat"
+images_filename_2 = "feature_images/cig_orig_pistol_marine_gray.dat"
 doom_scenario = "scenarios/cig_orig_pistol.wad"
 doom_config = "config/cig_playable.cfg"
 map1 = "map01"
@@ -21,11 +21,11 @@ map2 = "map01"
 isColourCorrection_1 = False
 isColourCorrection_2 = False
 channels_1 = 3
-channels_2 = 3
+channels_2 = 1
 
 isCig = True
 
-recorded_episodes = 5
+recorded_episodes = 6
 
 ### FUNCTIONS
 # Gather image from play

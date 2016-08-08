@@ -25,9 +25,9 @@ import learning_framework
 
 
 ### general parameters
-feature_detector_file = 'feature_detector_nets/cig_orig_pistol_cacodemon_FD_64x48x5_shannon_b_weights.save'
-controller_network_filename = 'controller_nets/cig_orig_pistol_cacodemon_5_shannon_b_NEAT_actionSelection/controller'
-test_controller_net_gen = '1'#435
+feature_detector_file = 'feature_detector_nets/cig_orig_pistol_marine_FD_64x48x32_shannon_b_weights.save'
+controller_network_filename = 'controller_nets/cig_orig_pistol_marine_32_shannon_b_NEAT_actionSelection/controller'
+test_controller_net_gen = '134'#435
 doom_scenario = "scenarios/cig_orig_pistol.wad"
 doom_config = "config/cig.cfg"
 stats_file = "_stats.txt"
@@ -35,18 +35,19 @@ evaluation_filename = "_eval.txt"
 map1 = "map01"
 map2 = "map01"
 
-num_features = 5
+num_features = 32
 num_states = 1
 
-isTraining = True
+isTraining = False
 isCig = True # whether or not the scenario is competition (cig)
 isNEAT = True # choose between NEAT or ES-HyperNEAT
 isFS_NEAT = False # False: start with all inputs linked to all outputs; True: random input-output links
 useShapingReward = False
 isColourCorrection = False
 useActionSelection = True # whether output units are final actions or each unit forms a part of an action
-use_delta_control = False
 use_shannon_diversity = True
+
+binary_threshold = 0.5 # threshold to consider output active (1) or inactive (0). Value of 0 won't use binary thresholding
 
 reward_multiplier = 5
 shoot_reward = -35.0
@@ -191,24 +192,16 @@ def getAction(net,inp):
 		return actions_available[action]
 	else:
 		action = [0 for _ in range(actions_available)]
-		if use_delta_control:
-			action[0] = int(math.floor(output[0] * 5))
-			if output[1] > input_dead_zone:
-				action[1] = 1
-			if output[2] > input_dead_zone:
-				action[2] = 1
-		else:
-			if output[0] > input_dead_zone:
-				action[0] = 1
-			if output[0] < -input_dead_zone:
-				action[1] = 1
-			if output[1] > input_dead_zone:
-				action[2] = 1
-			#if output[1] < -input_dead_zone:
-			#	action[3] = 1
-			if output[2] > input_dead_zone:
-				action[3] = 1
-		
+		if output[0] > input_dead_zone:
+			action[0] = 1
+		if output[0] < -input_dead_zone:
+			action[1] = 1
+		if output[1] > input_dead_zone:
+			action[2] = 1
+		#if output[1] < -input_dead_zone:
+		#	action[3] = 1
+		if output[2] > input_dead_zone:
+			action[3] = 1
 		return action
 
 
@@ -330,6 +323,9 @@ def evaluate(genome):
 				img = convert(s.image_buffer,isColourCorrection)
 				img = img.reshape([1, channels, downsampled_y, downsampled_x])
 				features = fd_network.predict(img).flatten()
+				if binary_threshold > 0:
+					features[features>binary_threshold] = 1
+					features[features<=binary_threshold] = 0
 				ammo = g.get_game_variable(GameVariable.SELECTED_WEAPON_AMMO)
 				health = max(0,g.get_game_variable(GameVariable.HEALTH))
 				ammo_input = min(float(ammo)/40.0,1.0)

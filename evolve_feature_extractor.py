@@ -30,14 +30,15 @@ from learning_framework import *
 import learning_framework
 
 ### general parameters
-feature_weights_filename = 'feature_detector_nets/cig_orig_pistol_cacodemon_FD_64x48x5_shannon_b_weights.save'
-images_filename = "feature_images/cig_orig_pistol_cacodemon_rgb.dat"
-stats_file = "stats/feature_extractor_cig_orig_pistol_cacodemon_edge_5_shannon_stats.txt"
+feature_weights_filename = 'feature_detector_nets/cig_orig_pistol_marine_FD_64x48x32_shannon_b_weights.save'
+images_filename = "feature_images/cig_orig_pistol_marine_rgb.dat"
+stats_file = "stats/feature_extractor_cig_orig_pistol_marine_rgb_32_shannon_stats.txt"
 
 isRandom = False # whether the network generated is randomised or evolved
 
 use_shannon_diversity = True # pressure selection on diversity of unique classifications (True) or in vector distances (False)
 binary_encoding = True # whether to use binary encoding (True) or weighted average of outputs when calculating diversity
+binary_threshold = 0.5 # threshold to consider output active (1) or inactive (0)
 
 mutation_rate = 0.001 #0.0005 probability of mutation (prob PER element)
 mutation_probability = 0.35 #probability that elite individual is mutated
@@ -47,7 +48,7 @@ weight_start = 5.0 # 5.0
 
 population_size = 100
 generations = 1000 #number of generations in the evolution process
-num_features = 5 #number of outputs of the CNN compressor (features to learn)
+num_features = 32 #number of outputs of the CNN compressor (features to learn)
 elite_ratio = 0.05 #proportion of top individuals that go to next generation
 
 
@@ -113,8 +114,8 @@ def evaluate(cnn,individual,training_img_set):
 			classification = 0
 			if binary_encoding:
 				##binary encoding of outputs
-				output[output>0.8] = 1
-				output[output<=0.8] = 0
+				output[output>binary_threshold] = 1
+				output[output<=binary_threshold] = 0
 				for n in range(len(output)):
 					classification += (2 ** n) * output[n]
 			else:

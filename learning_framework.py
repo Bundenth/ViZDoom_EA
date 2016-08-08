@@ -20,7 +20,7 @@ from keras.models import model_from_json
 downsampled_x = 64 #64
 downsampled_y = 48#48
 channels = 3 #channels on input image considered (GRAY8 = 1; RGB = 3)
-skiprate = 3
+skiprate = 5
 
 class CustomDoomGame:
 	def __init__(self,game,scenario, config,selectedMap = "map01"):
@@ -88,6 +88,7 @@ def create_cnn(input_rows,input_cols,num_outputs,final_activation='tanh'):
 
 	# input: input_colsxinput_rows images with 1 channels
 	# this applies 32 convolution filters of size 3x3 each.
+	'''
 	model.add(Convolution2D(8, 3, 3,
                         border_mode='valid',
                         input_shape=(channels, input_rows, input_cols)))
@@ -107,25 +108,27 @@ def create_cnn(input_rows,input_cols,num_outputs,final_activation='tanh'):
 		optimizer='adadelta',
 		metrics=['accuracy'])
 	'''
-	model.add(Convolution2D(12, 6, 6,
+	model.add(Convolution2D(24, 7, 7,
 			border_mode='valid',
 			input_shape=(channels, input_rows, input_cols)))
 	model.add(Activation('relu'))
 	model.add(MaxPooling2D(pool_size=(2, 2)))
-	model.add(Convolution2D(16, 4, 4))
+	model.add(Convolution2D(32, 4, 4))
 	model.add(Activation('relu'))
-	model.add(Convolution2D(18, 3, 3))
+	model.add(MaxPooling2D(pool_size=(2, 2)))
+	model.add(Convolution2D(48, 3, 3))
 	model.add(Activation('relu'))
+	model.add(MaxPooling2D(pool_size=(2, 2)))
 	model.add(Flatten())
-	model.add(Dense(96))
-	model.add(Activation('relu')) # num_outputs
+	model.add(Dense(128))
+	model.add(Activation('relu'))
 	model.add(Dense(num_outputs))
 	model.add(Activation(final_activation)) # num_outputs
 	
 	model.compile(loss='categorical_crossentropy',
 		optimizer='adadelta',
 		metrics=['accuracy'])
-	'''
+	
 	return model
 
 

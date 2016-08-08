@@ -1,1 +1,0 @@
-best,average,min,species,neurons,links

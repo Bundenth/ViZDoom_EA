@@ -88,7 +88,7 @@ last_shaping_reward = 0
 class ReplayMemory:
     def __init__(self, capacity):
 
-        if(not use_feature_detector):
+        if not use_feature_detector:
             state_shape = (capacity, channels, downsampled_y,downsampled_x)
         else:
             state_shape = (capacity, 1, num_features)
@@ -107,7 +107,7 @@ class ReplayMemory:
         self.last_health = initial_health
 
     def add_transition(self, s1, action, s2, reward):
-        if(not use_feature_detector):
+        if not use_feature_detector:
             self.s1[self.oldest_index] = s1
         else:
             self.s1[self.oldest_index,0] = s1
@@ -115,7 +115,7 @@ class ReplayMemory:
         if s2 is None:
             self.nonterminal[self.oldest_index] = False
         else:
-            if(not use_feature_detector):
+            if not use_feature_detector:
                 self.s2[self.oldest_index] = s2
             else:
                 self.s2[self.oldest_index,0] = s2
@@ -150,7 +150,7 @@ def create_network(available_actions_num):
 		# Creates the input layer of the network.
 		dqn = InputLayer(shape=[None, 1, num_features], input_var=s1)
 
-		dqn = DenseLayer(dqn, num_units=24, nonlinearity=rectify, W=GlorotUniform("relu"),
+		dqn = DenseLayer(dqn, num_units=int(num_features * 0.5), nonlinearity=rectify, W=GlorotUniform("relu"),
 						 b=Constant(.1))
 
 		# Adds a single fully connected layer which is the output layer.
