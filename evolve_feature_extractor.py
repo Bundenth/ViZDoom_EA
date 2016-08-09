@@ -30,9 +30,11 @@ from learning_framework import *
 import learning_framework
 
 ### general parameters
-feature_weights_filename = 'feature_detector_nets/defend_the_center/FD_64x48x8_distance_1.save'
+cycles = 1
+feature_weights_filename = 'feature_detector_nets/defend_the_center/FD_64x48x16_distance'
 images_filename = "feature_images/defend_the_center_rgb.dat"
-stats_file = "stats/FD_defend_the_center_rgb_8_distance_1_stats.txt"
+stats_file = "stats/FD_defend_the_center_rgb_16_distance_stats"
+test_fd_net_gen = '0'
 
 isRandom = False # whether the network generated is randomised or evolved
 
@@ -48,7 +50,7 @@ weight_start = 5.0 # 5.0
 
 population_size = 100
 generations = 300 #number of generations in the evolution process
-num_features = 8 #number of outputs of the CNN compressor (features to learn)
+num_features = 16 #number of outputs of the CNN compressor (features to learn)
 elite_ratio = 0.05 #proportion of top individuals that go to next generation
 
 target_fitness = 0.0 # stop training when this fitness is reached (0 to ignore)
@@ -159,10 +161,10 @@ def evaluate(cnn,individual,training_img_set):
 
 
 # fitness: measure of diversity (min(D) + mean(D))
-def evolve_feature_extractor(training_data_filename,weights_filename):
+def evolve_feature_extractor(training_data_filename,cycle):
 	starting_time = time.time()
 	
-	f = open(stats_file,'w')
+	f = open(stats_file + '_' + str(cycle) + '.txt','w')
 	f.write("best,average,worse\n")
 	f.close()
 	
@@ -231,7 +233,7 @@ def evolve_feature_extractor(training_data_filename,weights_filename):
 		print("Gen; ", gen+1, "; Best: ",best,"; Avg: ",avg,"; Min: ",worse)
 		
 		#store training stats
-		f = open(stats_file,'a')
+		f = open(stats_file + '_' + str(cycle) + '.txt','a')
 		f.write(str(best) + ',' + str(avg) + ',' + str(worse) + '\n')
 		f.close()
 		
@@ -239,7 +241,7 @@ def evolve_feature_extractor(training_data_filename,weights_filename):
 		best_individual = population[indices[0]]
 		for i in range(len(cnn.layers)):
 			cnn.layers[i].set_weights(best_individual[i])
-		cnn.save_weights(weights_filename,overwrite=True)
+		cnn.save_weights(feature_weights_filename + '_' + str(cycle) + '.save',overwrite=True)
 
 		del population[:]
 		population = new_generation
@@ -249,28 +251,30 @@ def evolve_feature_extractor(training_data_filename,weights_filename):
 			break;
 	
 	# store training time
-	f = open(stats_file,'a')
+	f = open(stats_file + '_' + str(cycle) + '.txt','a')
 	f.write('training time: ' + str(time.time()-starting_time) + '\n')
 	f.close()
 
 
-def storeRandomNetwork():
+def storeRandomNetwork(cycle):
 	cnn = create_cnn(downsampled_y,downsampled_x,num_features)
 	for layer in cnn.layers:
 		weights = copy.deepcopy(layer.get_weights())
 		randomise_weights(weights)
 		layer.set_weights(weights)
-	cnn.save_weights(feature_weights_filename,overwrite=True)
+	cnn.save_weights(feature_weights_filename + '_' + str(cycle) + '.save',overwrite=True)
 
 ######################################################################
 ######################################################################
 
 #evolve weights of Feature extractor (CNN) using Evolution over training set
 
-if isRandom:
-	storeRandomNetwork()
-else:
-	evolve_feature_extractor(images_filename,feature_weights_filename)
+for cycle in range(cycles):
+	print('**********\n','Cycle',cycle)
+	if isRandom:
+		storeRandomNetwork(cycle)
+	else:
+		evolve_feature_extractor(images_filename,cycle)
 
 #testing
 
@@ -279,7 +283,7 @@ training_img_set = cPickle.load(f)
 	
 cnn = create_cnn(downsampled_y,downsampled_x,num_features)
 
-cnn.load_weights(feature_weights_filename)
+cnn.load_weights(feature_weights_filename + '_' + test_fd_net_gen + '.save')
 
 #evaluate individual
 feature_vectors = [] #[0 for x in range(num_features)]
