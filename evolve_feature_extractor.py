@@ -30,15 +30,15 @@ from learning_framework import *
 import learning_framework
 
 ### general parameters
-feature_weights_filename = 'feature_detector_nets/defend_the_center/FD_64x48x8_distances_1.save'
+feature_weights_filename = 'feature_detector_nets/random/FD_64x48x64_5.save'
 images_filename = "feature_images/defend_the_center_rgb.dat"
-stats_file = "stats/feature_extractor_defend_the_center_rgb_8_distances_1_stats.txt"
+stats_file = "stats/feature_extractor_defend_the_center_rgb_16_shannonB_3_stats.txt"
 
-isRandom = False # whether the network generated is randomised or evolved
+isRandom = True # whether the network generated is randomised or evolved
 
-use_shannon_diversity = False # pressure selection on diversity of unique classifications (True) or in vector distances (False)
-binary_encoding = False # whether to use binary encoding (True) or weighted average of outputs when calculating diversity
-binary_threshold = 0.0 # threshold to consider output active (1) or inactive (0)
+use_shannon_diversity = True # pressure selection on diversity of unique classifications (True) or in vector distances (False)
+binary_encoding = True # whether to use binary encoding (True) or weighted average of outputs when calculating diversity
+binary_threshold = 0.5 # threshold to consider output active (1) or inactive (0)
 
 mutation_rate = 0.001 #0.0005 probability of mutation (prob PER element)
 mutation_probability = 0.35 #probability that elite individual is mutated
@@ -47,8 +47,8 @@ novelty_mutation_rate = 0.001 # mutation that randomises all weights in a sublay
 weight_start = 5.0 # 5.0
 
 population_size = 100
-generations = 350 #number of generations in the evolution process
-num_features = 8 #number of outputs of the CNN compressor (features to learn)
+generations = 300 #number of generations in the evolution process
+num_features = 64 #number of outputs of the CNN compressor (features to learn)
 elite_ratio = 0.05 #proportion of top individuals that go to next generation
 
 
@@ -128,7 +128,10 @@ def evaluate(cnn,individual,training_img_set):
 		else:
 			#Normalized Data
 			magnitude = math.sqrt(sum(output[i]*output[i] for i in range(len(output))))
-			normalised = [ output[i]/magnitude  for i in range(len(output)) ]
+			if magnitude > 0:
+				normalised = [ output[i]/magnitude  for i in range(len(output))]
+			else:
+				normalised = output
 			feature_vectors.append(normalised)
 		
 	#calculate fitness
@@ -151,7 +154,6 @@ def evaluate(cnn,individual,training_img_set):
 		iu = np.triu_indices_from(dist,1)
 		distances = dist[iu]
 		fitness = np.mean(distances) + min(distances)
-	
 	return fitness
 
 
@@ -297,7 +299,10 @@ for img in training_img_set:
 	else:
 		#Normalized Data
 		magnitude = math.sqrt(sum(output[i]*output[i] for i in range(len(output))))
-		normalised = [ output[i]/magnitude  for i in range(len(output)) ]
+		if magnitude > 0:
+			normalised = [ output[i]/magnitude  for i in range(len(output))]
+		else:
+			normalised = output
 		feature_vectors.append(normalised)
 	
 #calculate fitness

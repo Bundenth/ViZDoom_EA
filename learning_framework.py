@@ -108,20 +108,20 @@ def create_cnn(input_rows,input_cols,num_outputs,final_activation='sigmoid'):
 		optimizer='adadelta',
 		metrics=['accuracy'])
 	'''
-	model.add(Convolution2D(24, 7, 7,
+	model.add(Convolution2D(18, 7, 7,
 			border_mode='valid',
 			input_shape=(channels, input_rows, input_cols)))
 	model.add(Activation('relu'))
 	model.add(MaxPooling2D(pool_size=(2, 2)))
-	model.add(Convolution2D(32, 4, 4))
+	model.add(Convolution2D(24, 4, 4))
 	model.add(Activation('relu'))
 	model.add(MaxPooling2D(pool_size=(2, 2)))
-	model.add(Convolution2D(48, 3, 3))
+	model.add(Convolution2D(32, 3, 3))
 	model.add(Activation('relu'))
 	model.add(MaxPooling2D(pool_size=(2, 2)))
 	model.add(Flatten())
 	model.add(Dense(128))
-	model.add(Activation('relu'))
+	model.add(Activation('linear'))
 	model.add(Dense(num_outputs))
 	model.add(Activation(final_activation)) # num_outputs
 	
