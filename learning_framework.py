@@ -83,7 +83,7 @@ def convert(img,colorCorrection=False,num_channels=0):
 	return np.array(img_p)
 
 
-def create_cnn(input_rows,input_cols,num_outputs,final_activation='tanh'):
+def create_cnn(input_rows,input_cols,num_outputs,final_activation='sigmoid'):
 	model = Sequential()
 
 	# input: input_colsxinput_rows images with 1 channels

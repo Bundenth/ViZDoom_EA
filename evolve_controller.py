@@ -45,9 +45,8 @@ isFS_NEAT = False # False: start with all inputs linked to all outputs; True: ra
 useShapingReward = False
 isColourCorrection = False
 useActionSelection = True # whether output units are final actions or each unit forms a part of an action
-use_shannon_diversity = True
 
-binary_threshold = 0.5 # threshold to consider output active (1) or inactive (0). Value of 0 won't use binary thresholding
+binary_threshold = 0.0 # threshold to consider output active (1) or inactive (0). Value of 0 won't use binary thresholding
 
 reward_multiplier = 5
 shoot_reward = -35.0
@@ -57,11 +56,6 @@ ammo_pack_reward = 50.0 #50.0
 death_reward = 0.0
 
 initial_health = 99
-
-if use_shannon_diversity:
-	output_activation_function = 'sigmoid'
-else:
-	output_activation_function = 'tanh'
 
 if useActionSelection:
 	# left,right, forward and shoot and pair-combinations (cig)
@@ -77,7 +71,7 @@ if useActionSelection:
 else:
 	actions_available = 4
 	number_actions = 3 #axis + shoot
-	input_dead_zone = 0.2
+	input_dead_zone = 0.25
 
 # left, right, forward backward and pair-combinations (health_gather)
 #actions_available = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1],[1,0,1,0],[1,0,0,1],[0,1,1,0],[0,1,0,1]]
@@ -87,7 +81,7 @@ epochs = 2500
 evaluation_episodes = 100
 
 #load feature detector network
-fd_network = create_cnn(downsampled_y,downsampled_x,num_features,output_activation_function)
+fd_network = create_cnn(downsampled_y,downsampled_x,num_features)
 fd_network.load_weights(feature_detector_file)
 
 #NEAT parameters and initialisation
@@ -192,16 +186,16 @@ def getAction(net,inp):
 		return actions_available[action]
 	else:
 		action = [0 for _ in range(actions_available)]
-		if output[0] > input_dead_zone:
+		if output[0] > 0.5 + input_dead_zone/2.0:
 			action[0] = 1
-		if output[0] < -input_dead_zone:
+		if output[0] < 0.5 - input_dead_zone/2.0:
 			action[1] = 1
-		if output[1] > input_dead_zone:
+		if output[1] > 0.5 + input_dead_zone/2.0:
 			action[2] = 1
-		#if output[1] < -input_dead_zone:
-		#	action[3] = 1
-		if output[2] > input_dead_zone:
+		if output[1] < 0.5 - input_dead_zone/2.0:
 			action[3] = 1
+		if output[2] > input_dead_zone:
+			action[4] = 1
 		return action
 
 

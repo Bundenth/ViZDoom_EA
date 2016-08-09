@@ -30,15 +30,15 @@ from learning_framework import *
 import learning_framework
 
 ### general parameters
-feature_weights_filename = 'feature_detector_nets/cig_orig_pistol_marine_FD_64x48x32_shannon_b_weights.save'
-images_filename = "feature_images/cig_orig_pistol_marine_rgb.dat"
-stats_file = "stats/feature_extractor_cig_orig_pistol_marine_rgb_32_shannon_stats.txt"
+feature_weights_filename = 'feature_detector_nets/defend_the_center/FD_64x48x8_distances_1.save'
+images_filename = "feature_images/defend_the_center_rgb.dat"
+stats_file = "stats/feature_extractor_defend_the_center_rgb_8_distances_1_stats.txt"
 
 isRandom = False # whether the network generated is randomised or evolved
 
-use_shannon_diversity = True # pressure selection on diversity of unique classifications (True) or in vector distances (False)
-binary_encoding = True # whether to use binary encoding (True) or weighted average of outputs when calculating diversity
-binary_threshold = 0.5 # threshold to consider output active (1) or inactive (0)
+use_shannon_diversity = False # pressure selection on diversity of unique classifications (True) or in vector distances (False)
+binary_encoding = False # whether to use binary encoding (True) or weighted average of outputs when calculating diversity
+binary_threshold = 0.0 # threshold to consider output active (1) or inactive (0)
 
 mutation_rate = 0.001 #0.0005 probability of mutation (prob PER element)
 mutation_probability = 0.35 #probability that elite individual is mutated
@@ -47,15 +47,10 @@ novelty_mutation_rate = 0.001 # mutation that randomises all weights in a sublay
 weight_start = 5.0 # 5.0
 
 population_size = 100
-generations = 1000 #number of generations in the evolution process
-num_features = 32 #number of outputs of the CNN compressor (features to learn)
+generations = 350 #number of generations in the evolution process
+num_features = 8 #number of outputs of the CNN compressor (features to learn)
 elite_ratio = 0.05 #proportion of top individuals that go to next generation
 
-
-if use_shannon_diversity:
-	output_activation_function = 'sigmoid' # softmax (all sum to 1), linear[-R,R], relu[0,R], sigmoid[0,1]
-else:
-	output_activation_function = 'tanh'
 
 ### FUNCTIONS
 
@@ -173,7 +168,7 @@ def evolve_feature_extractor(training_data_filename,weights_filename):
 	f.close()
 	
 	print("Generating CNN...")
-	cnn = create_cnn(downsampled_y,downsampled_x,num_features,output_activation_function)
+	cnn = create_cnn(downsampled_y,downsampled_x,num_features)
 
 	print("Creating initial population...")
 	population = []
@@ -246,7 +241,7 @@ def evolve_feature_extractor(training_data_filename,weights_filename):
 
 
 def storeRandomNetwork():
-	cnn = create_cnn(downsampled_y,downsampled_x,num_features,output_activation_function)
+	cnn = create_cnn(downsampled_y,downsampled_x,num_features)
 	for layer in cnn.layers:
 		weights = copy.deepcopy(layer.get_weights())
 		randomise_weights(weights)
@@ -268,7 +263,7 @@ else:
 f = open(images_filename,'rb')
 training_img_set = cPickle.load(f)
 	
-cnn = create_cnn(downsampled_y,downsampled_x,num_features,output_activation_function)
+cnn = create_cnn(downsampled_y,downsampled_x,num_features)
 
 cnn.load_weights(feature_weights_filename)
 
