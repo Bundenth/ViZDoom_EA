@@ -25,8 +25,8 @@ import learning_framework
 
 
 ### general parameters
-feature_detector_file = 'feature_detector_nets/defend_the_center/FD_64x48x16_shannonB_1.save'
-controller_network_filename = 'controller_nets/defend_the_center/NEAT_actionSelection_16_shannonB_1/controller'
+feature_detector_file = 'feature_detector_nets/defend_the_center/FD_64x48x8_distance_1.save'
+controller_network_filename = 'controller_nets/defend_the_center/NEAT_actionSelection_8_shannonAvg_1/controller'
 test_controller_net_gen = '1'#435
 doom_scenario = "scenarios/defend_the_center.wad"
 doom_config = "config/defend_the_center.cfg"
@@ -35,10 +35,10 @@ evaluation_filename = "_eval.txt"
 map1 = "map01"
 map2 = "map01"
 
-num_features = 16
+num_features = 8
 num_states = 1
 
-isTraining = False
+isTraining = True
 isCig = False # whether or not the scenario is competition (cig)
 isNEAT = True # choose between NEAT or ES-HyperNEAT
 isFS_NEAT = False # False: start with all inputs linked to all outputs; True: random input-output links
@@ -46,7 +46,7 @@ useShapingReward = False
 isColourCorrection = False
 useActionSelection = True # whether output units are final actions or each unit forms a part of an action
 
-binary_threshold = 0.5 # threshold to consider output active (1) or inactive (0). Value of 0 won't use binary thresholding
+binary_threshold = 0.0 # threshold to consider output active (1) or inactive (0). Value of 0 won't use binary thresholding
 
 reward_multiplier = 1
 shoot_reward = -35.0
@@ -77,7 +77,7 @@ else:
 #actions_available = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1],[1,0,1,0],[1,0,0,1],[0,1,1,0],[0,1,0,1]]
 
 test_fitness_episodes = 2
-epochs = 300
+epochs = 3
 evaluation_episodes = 100
 
 #load feature detector network
@@ -238,6 +238,7 @@ def getbest(i,controller_network_filename):
 	pop.RNG.Seed(i)
 
 	max_score = 0
+	starting_time = time.time()
 	for generation in range(epochs):
 		genome_list = NEAT.GetGenomeList(pop)
 		fitnesses = EvaluateGenomeList_Serial(genome_list, evaluate, display=False)
@@ -271,6 +272,11 @@ def getbest(i,controller_network_filename):
 
 		pop.Epoch()
 		generations = generation
+	
+	# store training time
+	f = open(os.path.dirname(controller_network_filename) + '/' + stats_file,'a')
+	f.write('traininig time: ' + str(time.time()-starting_time) + str("\n"))
+	f.close()
 
 	return max_score
 
@@ -369,27 +375,13 @@ def evaluate(genome):
 
 #train
 if isTraining:
-	gens = []
-	for run in range(1):
-		gen = getbest(run,controller_network_filename)
-		gens += [gen]
-		print('Run:', run, 'Max score in DOOM:', gen)
-	avg_gens = sum(gens) / len(gens)
-
-	print('All:', gens)
-	print('Average:', avg_gens)
+	gen = getbest(int(random.random() * 100),controller_network_filename)
+	print('Max score in DOOM:', gen)
 
 
 #test
 net = NEAT.NeuralNetwork()
 net.Load(controller_network_filename + test_controller_net_gen + '.net')
-
-#if useDetectImages:
-	#load initial image to detect
-#	img = cv2.imread('cacodemon.png',1)
-#	bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-#	orb = cv2.ORB()
-#	kp1, des1 = orb.detectAndCompute(img,None)
 
 #store stats
 f = open(os.path.dirname(controller_network_filename) + '/' + evaluation_filename,'w')

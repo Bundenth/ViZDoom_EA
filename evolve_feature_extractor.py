@@ -30,14 +30,14 @@ from learning_framework import *
 import learning_framework
 
 ### general parameters
-feature_weights_filename = 'feature_detector_nets/random/FD_64x48x64_5.save'
+feature_weights_filename = 'feature_detector_nets/defend_the_center/FD_64x48x8_distance_1.save'
 images_filename = "feature_images/defend_the_center_rgb.dat"
-stats_file = "stats/feature_extractor_defend_the_center_rgb_16_shannonB_3_stats.txt"
+stats_file = "stats/FD_defend_the_center_rgb_8_distance_1_stats.txt"
 
-isRandom = True # whether the network generated is randomised or evolved
+isRandom = False # whether the network generated is randomised or evolved
 
-use_shannon_diversity = True # pressure selection on diversity of unique classifications (True) or in vector distances (False)
-binary_encoding = True # whether to use binary encoding (True) or weighted average of outputs when calculating diversity
+use_shannon_diversity = False # pressure selection on diversity of unique classifications (True) or in vector distances (False)
+binary_encoding = False # whether to use binary encoding (True) or weighted average of outputs when calculating diversity
 binary_threshold = 0.5 # threshold to consider output active (1) or inactive (0)
 
 mutation_rate = 0.001 #0.0005 probability of mutation (prob PER element)
@@ -48,9 +48,10 @@ weight_start = 5.0 # 5.0
 
 population_size = 100
 generations = 300 #number of generations in the evolution process
-num_features = 64 #number of outputs of the CNN compressor (features to learn)
+num_features = 8 #number of outputs of the CNN compressor (features to learn)
 elite_ratio = 0.05 #proportion of top individuals that go to next generation
 
+target_fitness = 0.0 # stop training when this fitness is reached (0 to ignore)
 
 ### FUNCTIONS
 
@@ -159,6 +160,8 @@ def evaluate(cnn,individual,training_img_set):
 
 # fitness: measure of diversity (min(D) + mean(D))
 def evolve_feature_extractor(training_data_filename,weights_filename):
+	starting_time = time.time()
+	
 	f = open(stats_file,'w')
 	f.write("best,average,worse\n")
 	f.close()
@@ -233,13 +236,22 @@ def evolve_feature_extractor(training_data_filename,weights_filename):
 		f.close()
 		
 		#store best individual
-		best = population[indices[0]]
+		best_individual = population[indices[0]]
 		for i in range(len(cnn.layers)):
-			cnn.layers[i].set_weights(best[i])
+			cnn.layers[i].set_weights(best_individual[i])
 		cnn.save_weights(weights_filename,overwrite=True)
 
 		del population[:]
 		population = new_generation
+		
+		if target_fitness > 0 and best >= target_fitness:
+			print(best)
+			break;
+	
+	# store training time
+	f = open(stats_file,'a')
+	f.write('training time: ' + str(time.time()-starting_time) + '\n')
+	f.close()
 
 
 def storeRandomNetwork():
