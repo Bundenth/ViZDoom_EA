@@ -25,30 +25,35 @@ import learning_framework
 
 
 ### general parameters
-feature_detector_file = 'feature_detector_nets/defend_the_center/FD_64x48x8_distance_1.save'
-controller_network_filename = 'controller_nets/defend_the_center/NEAT_actionSelection_8_shannonAvg_1/controller'
-test_controller_net_gen = '1'#435
-doom_scenario = "scenarios/defend_the_center.wad"
-doom_config = "config/defend_the_center.cfg"
+feature_detector_file = 'feature_detector_nets/cig_orig_rocket_marine_FD_64x48x32_distanceL_0.save'
+controller_network_filename = 'controller_nets/cig_orig_rocket_marine_NEAT_actionSelection_32_distance_linear/controller'
+test_controller_net_gen = '74'#435
+doom_scenario = "scenarios/cig_orig_rocket.wad"
+doom_config = "config/cig.cfg"
 stats_file = "_stats.txt"
 evaluation_filename = "_eval.txt"
 map1 = "map01"
 map2 = "map01"
 
-num_features = 8
+fd_fitness_factor = FD_Fitness_factor.VECTOR_DISTANCE_LINEAR
+
+num_features = 32
 num_states = 1
 
 isTraining = True
-isCig = False # whether or not the scenario is competition (cig)
+isCig = True # whether or not the scenario is competition (cig)
 isNEAT = True # choose between NEAT or ES-HyperNEAT
 isFS_NEAT = False # False: start with all inputs linked to all outputs; True: random input-output links
 useShapingReward = False
 isColourCorrection = False
 useActionSelection = True # whether output units are final actions or each unit forms a part of an action
 
+###parameters set automatically based on FD_Fitness_factor
+output_activation_function = 'sigmoid'
 binary_threshold = 0.0 # threshold to consider output active (1) or inactive (0). Value of 0 won't use binary thresholding
+###
 
-reward_multiplier = 1
+reward_multiplier = 5
 shoot_reward = -35.0
 health_kit_reward = 75.0 #75.0
 harm_reward = 0
@@ -57,31 +62,42 @@ death_reward = 0.0
 
 initial_health = 100
 
+test_fitness_episodes = 2
+epochs = 500
+evaluation_episodes = 100
+
+
+if fd_fitness_factor == FD_Fitness_factor.VECTOR_DISTANCE_TANH:
+	output_activation_function = 'tanh'
+if fd_fitness_factor == FD_Fitness_factor.VECTOR_DISTANCE_LINEAR:
+	output_activation_function = 'linear'
+if fd_fitness_factor == FD_Fitness_factor.SHANNON_AVG:
+	output_activation_function = 'sigmoid'
+	binary_threshold = 0.0
+if fd_fitness_factor == FD_Fitness_factor.SHANNON_BINARY:
+	output_activation_function = 'sigmoid'
+	binary_threshold = 0.5
+
+
 if useActionSelection:
 	# left,right, forward and shoot and pair-combinations (pursuit and gather)
-	#actions_available = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1], #single actions
+	actions_available = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]] #single actions
 	#			[1,0,1,0],[0,1,1,0], #let-right,forward double actions
-	#			[1,0,0,1],[0,1,0,1],[0,0,1,1]] #single actions+shoot
+	#				[1,0,0,1],[0,1,0,1],[0,0,1,1]] #single actions+shoot
 	#left, right,forward, backward and pair-combinations (health_gathering)
 	#actions_available = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1], #single actions
 	#			[1,0,1,0], [0,1,1,0], [1,0,0,1], [0,1,0,1]] #let-right,forward,backward double actions
 	# left, right, shoot and pair-combinations (defend_centre)
-	actions_available = [[1,0,0],[0,1,0],[0,0,1]]
+	#actions_available = [[1,0,0],[0,1,0],[0,0,1]]
 	#				[1,0,1],[0,1,1]]
 else:
 	actions_available = 4
 	number_actions = 3 #axis + shoot
 	input_dead_zone = 0.25
 
-# left, right, forward backward and pair-combinations (health_gather)
-#actions_available = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1],[1,0,1,0],[1,0,0,1],[0,1,1,0],[0,1,0,1]]
-
-test_fitness_episodes = 2
-epochs = 3
-evaluation_episodes = 100
 
 #load feature detector network
-fd_network = create_cnn(downsampled_y,downsampled_x,num_features)
+fd_network = create_cnn(downsampled_y,downsampled_x,num_features,output_activation_function)
 fd_network.load_weights(feature_detector_file)
 
 #NEAT parameters and initialisation

@@ -22,6 +22,13 @@ downsampled_y = 48#48
 channels = 3 #channels on input image considered (GRAY8 = 1; RGB = 3)
 skiprate = 5
 
+class FD_Fitness_factor(object):
+	VECTOR_DISTANCE_TANH = 0
+	VECTOR_DISTANCE_LINEAR = 1
+	SHANNON_BINARY = 2
+	SHANNON_AVG = 3
+	RANDOM = 4
+
 class CustomDoomGame:
 	def __init__(self,game,scenario, config,selectedMap = "map01"):
 		game.set_vizdoom_path("../ViZDoom/bin/vizdoom")
@@ -120,10 +127,8 @@ def create_cnn(input_rows,input_cols,num_outputs,final_activation='sigmoid'):
 	model.add(Activation('relu'))
 	model.add(MaxPooling2D(pool_size=(2, 2)))
 	model.add(Flatten())
-	model.add(Dense(128))
-	model.add(Activation('linear'))
-	model.add(Dense(num_outputs))
-	model.add(Activation(final_activation)) # num_outputs
+	model.add(Dense(128,activation='relu'))
+	model.add(Dense(num_outputs,activation=final_activation))
 	
 	model.compile(loss='categorical_crossentropy',
 		optimizer='adadelta',

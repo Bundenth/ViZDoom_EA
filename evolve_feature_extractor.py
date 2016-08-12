@@ -30,17 +30,21 @@ from learning_framework import *
 import learning_framework
 
 ### general parameters
-cycles = 1
-feature_weights_filename = 'feature_detector_nets/defend_the_center/FD_64x48x16_distance'
-images_filename = "feature_images/defend_the_center_rgb.dat"
-stats_file = "stats/FD_defend_the_center_rgb_16_distance_stats"
+cycles = 5
+feature_weights_filename = 'feature_detector_nets/pursuit_and_gather/FD_64x48x64_distanceL'
+images_filename = "feature_images/pursuit_and_gather_rgb.dat"
+stats_file = "stats/FD_pursuit_and_gather_rgb_64_distanceL_stats"
 test_fd_net_gen = '0'
 
-isRandom = False # whether the network generated is randomised or evolved
+fd_fitness_factor = FD_Fitness_factor.VECTOR_DISTANCE_LINEAR
 
+###this parameters are changed automatically from FD_Fitness_factor type
+isRandom = False # whether the network generated is randomised or evolved
 use_shannon_diversity = False # pressure selection on diversity of unique classifications (True) or in vector distances (False)
 binary_encoding = False # whether to use binary encoding (True) or weighted average of outputs when calculating diversity
-binary_threshold = 0.5 # threshold to consider output active (1) or inactive (0)
+output_activation_function = 'sigmoid'
+binary_threshold = 0.0 # threshold to consider output active (1) or inactive (0)
+###
 
 mutation_rate = 0.001 #0.0005 probability of mutation (prob PER element)
 mutation_probability = 0.35 #probability that elite individual is mutated
@@ -49,11 +53,29 @@ novelty_mutation_rate = 0.001 # mutation that randomises all weights in a sublay
 weight_start = 5.0 # 5.0
 
 population_size = 100
-generations = 300 #number of generations in the evolution process
-num_features = 16 #number of outputs of the CNN compressor (features to learn)
+generations = 400 #number of generations in the evolution process
+num_features = 64 #number of outputs of the CNN compressor (features to learn)
 elite_ratio = 0.05 #proportion of top individuals that go to next generation
 
 target_fitness = 0.0 # stop training when this fitness is reached (0 to ignore)
+
+
+#assign appropriate parameters based on fitness factor
+if fd_fitness_factor == FD_Fitness_factor.VECTOR_DISTANCE_TANH:
+	output_activation_function = 'tanh'
+if fd_fitness_factor == FD_Fitness_factor.VECTOR_DISTANCE_LINEAR:
+	output_activation_function = 'linear'
+if fd_fitness_factor == FD_Fitness_factor.SHANNON_AVG:
+	use_shannon_diversity = True
+	binary_encoding = False
+if fd_fitness_factor == FD_Fitness_factor.SHANNON_BINARY:
+	use_shannon_diversity = True
+	binary_encoding = True
+	binary_threshold = 0.5
+if fd_fitness_factor == FD_Fitness_factor.RANDOM:
+	isRandom = True
+
+print(output_activation_function)
 
 ### FUNCTIONS
 
@@ -108,6 +130,8 @@ def evaluate(cnn,individual,training_img_set):
 		img_p = img.reshape([1, channels, downsampled_y, downsampled_x])
 		output = cnn.predict(np.array(img_p))
 		output = output.flatten()
+		#print(output)
+		#sleep(1)
 		if use_shannon_diversity:
 			classification = 0
 			if binary_encoding:
@@ -175,7 +199,7 @@ def evolve_feature_extractor(training_data_filename,cycle):
 	f.close()
 	
 	print("Generating CNN...")
-	cnn = create_cnn(downsampled_y,downsampled_x,num_features)
+	cnn = create_cnn(downsampled_y,downsampled_x,num_features,output_activation_function)
 
 	print("Creating initial population...")
 	population = []
@@ -257,7 +281,7 @@ def evolve_feature_extractor(training_data_filename,cycle):
 
 
 def storeRandomNetwork(cycle):
-	cnn = create_cnn(downsampled_y,downsampled_x,num_features)
+	cnn = create_cnn(downsampled_y,downsampled_x,num_features,output_activation_function)
 	for layer in cnn.layers:
 		weights = copy.deepcopy(layer.get_weights())
 		randomise_weights(weights)
@@ -281,7 +305,7 @@ for cycle in range(cycles):
 f = open(images_filename,'rb')
 training_img_set = cPickle.load(f)
 	
-cnn = create_cnn(downsampled_y,downsampled_x,num_features)
+cnn = create_cnn(downsampled_y,downsampled_x,num_features,output_activation_function)
 
 cnn.load_weights(feature_weights_filename + '_' + test_fd_net_gen + '.save')
 
@@ -296,8 +320,8 @@ for img in training_img_set:
 		classification = 0
 		if binary_encoding:
 			##binary encoding of outputs
-			output[output>0.8] = 1
-			output[output<=0.8] = 0
+			output[output>binary_threshold] = 1
+			output[output<=binary_threshold] = 0
 			for n in range(len(output)):
 				classification += (2 ** n) * output[n]
 		else:
