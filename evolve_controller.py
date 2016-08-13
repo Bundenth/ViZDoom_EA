@@ -25,8 +25,8 @@ import learning_framework
 
 
 ### general parameters
-feature_detector_file = 'feature_detector_nets/pursuit_and_gather/FD_64x48x8_distanceL_0.save'
-controller_network_filename = 'controller_nets/pursuit_and_gather/NEAT_actionSelection_8_distanceL/controller'
+feature_detector_file = 'feature_detector_nets/pursuit_and_gather/FD_64x48x8_distanceL_2.save'
+controller_network_filename = 'controller_nets/pursuit_and_gather/NEAT_actionSelection_8_distanceL_sigmoid_2/controller'
 test_controller_net_gen = '1'#435
 doom_scenario = "scenarios/pursuit_and_gather.wad"
 doom_config = "config/pursuit_and_gather.cfg"
@@ -36,19 +36,19 @@ map1 = "map01"
 map2 = "map01"
 
 fd_fitness_factor = FD_Fitness_factor.VECTOR_DISTANCE_LINEAR
+neat_output_activation = NEAT.ActivationFunction.SIGNED_SIGMOID #NEAT.ActivationFunction.LINEAR
 
-num_features = 32
+num_features = 8
 num_states = 1
 
 isTraining = True
-isCig = True # whether or not the scenario is competition (cig)
+isCig = False # whether or not the scenario is competition (cig)
 isNEAT = True # choose between NEAT or ES-HyperNEAT
 isFS_NEAT = False # False: start with all inputs linked to all outputs; True: random input-output links
 useShapingReward = False
 isColourCorrection = False
 useActionSelection = True # whether output units are final actions or each unit forms a part of an action
 
-neat_output_activation = NEAT.ActivationFunction.SIGNED_SIGMOID #NEAT.ActivationFunction.LINEAR
 
 ###parameters set automatically based on FD_Fitness_factor
 output_activation_function = 'sigmoid'
@@ -65,7 +65,7 @@ death_reward = 0.0
 initial_health = 100
 
 test_fitness_episodes = 1
-epochs = 300
+epochs = 200
 evaluation_episodes = 100
 
 
