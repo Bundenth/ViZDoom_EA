@@ -25,11 +25,11 @@ import learning_framework
 
 
 ### general parameters
-feature_detector_file = 'feature_detector_nets/cig_orig_rocket_marine_FD_64x48x32_distanceL_0.save'
-controller_network_filename = 'controller_nets/cig_orig_rocket_marine_NEAT_actionSelection_32_distance_linear/controller'
-test_controller_net_gen = '74'#435
-doom_scenario = "scenarios/cig_orig_rocket.wad"
-doom_config = "config/cig.cfg"
+feature_detector_file = 'feature_detector_nets/pursuit_and_gather/FD_64x48x8_distanceL_0.save'
+controller_network_filename = 'controller_nets/pursuit_and_gather/NEAT_actionSelection_8_distanceL/controller'
+test_controller_net_gen = '1'#435
+doom_scenario = "scenarios/pursuit_and_gather.wad"
+doom_config = "config/pursuit_and_gather.cfg"
 stats_file = "_stats.txt"
 evaluation_filename = "_eval.txt"
 map1 = "map01"
@@ -48,12 +48,14 @@ useShapingReward = False
 isColourCorrection = False
 useActionSelection = True # whether output units are final actions or each unit forms a part of an action
 
+neat_output_activation = NEAT.ActivationFunction.SIGNED_SIGMOID #NEAT.ActivationFunction.LINEAR
+
 ###parameters set automatically based on FD_Fitness_factor
 output_activation_function = 'sigmoid'
 binary_threshold = 0.0 # threshold to consider output active (1) or inactive (0). Value of 0 won't use binary thresholding
 ###
 
-reward_multiplier = 5
+reward_multiplier = 1
 shoot_reward = -35.0
 health_kit_reward = 75.0 #75.0
 harm_reward = 0
@@ -62,8 +64,8 @@ death_reward = 0.0
 
 initial_health = 100
 
-test_fitness_episodes = 2
-epochs = 500
+test_fitness_episodes = 1
+epochs = 300
 evaluation_episodes = 100
 
 
@@ -81,9 +83,9 @@ if fd_fitness_factor == FD_Fitness_factor.SHANNON_BINARY:
 
 if useActionSelection:
 	# left,right, forward and shoot and pair-combinations (pursuit and gather)
-	actions_available = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]] #single actions
-	#			[1,0,1,0],[0,1,1,0], #let-right,forward double actions
-	#				[1,0,0,1],[0,1,0,1],[0,0,1,1]] #single actions+shoot
+	actions_available = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1], #single actions
+				[1,0,1,0],[0,1,1,0], #let-right,forward double actions
+				[1,0,0,1],[0,1,0,1],[0,0,1,1]] #single actions+shoot
 	#left, right,forward, backward and pair-combinations (health_gathering)
 	#actions_available = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1], #single actions
 	#			[1,0,1,0], [0,1,1,0], [1,0,0,1], [0,1,0,1]] #let-right,forward,backward double actions
@@ -93,7 +95,7 @@ if useActionSelection:
 else:
 	actions_available = 4
 	number_actions = 3 #axis + shoot
-	input_dead_zone = 0.25
+	input_dead_zone = 1000
 
 
 #load feature detector network
@@ -132,18 +134,22 @@ params.MutateActivationAProb = 0.002 #
 params.MutateActivationBProb = 0.002 #
 params.ActivationAMutationMaxPower = 0.35 
 params.MutateNeuronActivationTypeProb = 0.03 #
-params.ActivationFunction_SignedSigmoid_Prob = 1.0;
+
+params.ActivationFunction_SignedSigmoid_Prob = 0.0;
 params.ActivationFunction_UnsignedSigmoid_Prob = 0.0;
 params.ActivationFunction_Tanh_Prob = 0.0;
-params.ActivationFunction_TanhCubic_Prob = 1.0;
+params.ActivationFunction_TanhCubic_Prob = 0.0;
 params.ActivationFunction_SignedStep_Prob = 0.0;
 params.ActivationFunction_UnsignedStep_Prob = 0.0;
-params.ActivationFunction_SignedGauss_Prob = 1.0;
+params.ActivationFunction_SignedGauss_Prob = 0.0;
 params.ActivationFunction_UnsignedGauss_Prob = 0.0;
 params.ActivationFunction_Abs_Prob = 0.0;
-params.ActivationFunction_SignedSine_Prob = 1.0;
+params.ActivationFunction_SignedSine_Prob = 0.0;
 params.ActivationFunction_UnsignedSine_Prob = 0.0;
-params.ActivationFunction_Linear_Prob = 1.0;
+params.ActivationFunction_Linear_Prob = 0.0;
+params.ActivationFunction_Relu_Prob = 1.0;
+params.ActivationFunction_Softplus_Prob = 0.0;
+
 
 #HyperNEAT parameters
 if not isNEAT:
@@ -202,6 +208,15 @@ def getAction(net,inp):
 		return actions_available[action]
 	else:
 		action = [0 for _ in range(actions_available)]
+		if output[0] > input_dead_zone:
+			action[0] = 1
+		if output[0] < -input_dead_zone:
+			action[1] = 1
+		if output[1] > input_dead_zone:
+			action[2] = 1
+		if output[2] > input_dead_zone:
+			action[3] = 1
+		'''
 		if output[0] > 0.5 + input_dead_zone/2.0:
 			action[0] = 1
 		if output[0] < 0.5 - input_dead_zone/2.0:
@@ -212,6 +227,7 @@ def getAction(net,inp):
 			action[3] = 1
 		if output[2] > input_dead_zone:
 			action[4] = 1
+		'''
 		return action
 
 
@@ -238,16 +254,23 @@ def getbest(i,controller_network_filename):
 			output_units = len(actions_available)
 		else:
 			output_units = number_actions
-		g = NEAT.Genome(0, num_features*num_states+3, 0, output_units, isFS_NEAT, NEAT.ActivationFunction.TANH_CUBIC, 
-			NEAT.ActivationFunction.TANH_CUBIC, 0, params)
+		g = NEAT.Genome(0,
+			num_features*num_states+3, 
+			0, 
+			output_units, 
+			isFS_NEAT, 
+			neat_output_activation, # output activation
+			NEAT.ActivationFunction.RELU,  # hidden activation
+			0, 
+			params)
 	else:
 		g = NEAT.Genome(0,
 			substrate.GetMinCPPNInputs(),
 			0,
 			substrate.GetMinCPPNOutputs(),
 			isFS_NEAT,
-			NEAT.ActivationFunction.TANH_CUBIC,
-			NEAT.ActivationFunction.TANH_CUBIC,
+			neat_output_activation,
+			NEAT.ActivationFunction.RELU,
 			0,
 			params)
 	pop = NEAT.Population(g, params, True, 1.0, i)

@@ -30,13 +30,13 @@ from learning_framework import *
 import learning_framework
 
 ### general parameters
-cycles = 5
-feature_weights_filename = 'feature_detector_nets/pursuit_and_gather/FD_64x48x64_distanceL'
+cycles = 4
+feature_weights_filename = 'feature_detector_nets/pursuit_and_gather/FD_64x48x64_distanceT'
 images_filename = "feature_images/pursuit_and_gather_rgb.dat"
-stats_file = "stats/FD_pursuit_and_gather_rgb_64_distanceL_stats"
+stats_file = "stats/FD_pursuit_and_gather_rgb_64_distanceT_stats"
 test_fd_net_gen = '0'
 
-fd_fitness_factor = FD_Fitness_factor.VECTOR_DISTANCE_LINEAR
+fd_fitness_factor = FD_Fitness_factor.VECTOR_DISTANCE_TANH
 
 ###this parameters are changed automatically from FD_Fitness_factor type
 isRandom = False # whether the network generated is randomised or evolved
