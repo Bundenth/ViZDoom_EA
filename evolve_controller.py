@@ -25,8 +25,8 @@ import learning_framework
 
 
 ### general parameters
-feature_detector_file = 'feature_detector_nets/pursuit_and_gather/FD_64x48x8_distanceL_2.save'
-controller_network_filename = 'controller_nets/pursuit_and_gather/NEAT_actionSelection_8_distanceL_sigmoid_2/controller'
+feature_detector_file = 'feature_detector_nets/pursuit_and_gather/FD_64x48x8_distanceL_0.save'
+controller_network_filename = 'controller_nets/pursuit_and_gather/NEAT_actionSelection_8_distanceL_sigmoid_0/controller'
 test_controller_net_gen = '1'#435
 doom_scenario = "scenarios/pursuit_and_gather.wad"
 doom_config = "config/pursuit_and_gather.cfg"
@@ -65,8 +65,8 @@ death_reward = 0.0
 initial_health = 100
 
 test_fitness_episodes = 1
-epochs = 200
-evaluation_episodes = 100
+epochs = 300
+evaluation_episodes = 1
 
 
 if fd_fitness_factor == FD_Fitness_factor.VECTOR_DISTANCE_TANH:
