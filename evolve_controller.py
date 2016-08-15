@@ -25,8 +25,8 @@ import learning_framework
 
 
 ### general parameters
-feature_detector_file = 'feature_detector_nets/pursuit_and_gather/FD_64x48x8_distanceL_0.save'
-controller_network_filename = 'controller_nets/pursuit_and_gather/NEAT_actionSelection_8_distanceL_sigmoid_0/controller'
+feature_detector_file = 'feature_detector_nets/random/FD_64x48x32_0.save'
+controller_network_filename = 'controller_nets/pursuit_and_gather/NEAT_actionSelection_32_random_sigmoid_0_AAAA/controller'
 test_controller_net_gen = '1'#435
 doom_scenario = "scenarios/pursuit_and_gather.wad"
 doom_config = "config/pursuit_and_gather.cfg"
@@ -38,7 +38,7 @@ map2 = "map01"
 fd_fitness_factor = FD_Fitness_factor.VECTOR_DISTANCE_LINEAR
 neat_output_activation = NEAT.ActivationFunction.SIGNED_SIGMOID #NEAT.ActivationFunction.LINEAR
 
-num_features = 8
+num_features = 32
 num_states = 1
 
 isTraining = True
@@ -57,15 +57,15 @@ binary_threshold = 0.0 # threshold to consider output active (1) or inactive (0)
 
 reward_multiplier = 1
 shoot_reward = -35.0
-health_kit_reward = 75.0 #75.0
+health_kit_reward = 40.0 #75.0
 harm_reward = 0
-ammo_pack_reward = 50.0 #50.0
+ammo_pack_reward = 25.0 #50.0
 death_reward = 0.0
 
 initial_health = 100
 
-test_fitness_episodes = 1
-epochs = 300
+test_fitness_episodes = 2
+epochs = 200
 evaluation_episodes = 1
 
 
