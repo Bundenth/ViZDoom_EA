@@ -25,9 +25,9 @@ import learning_framework
 
 
 ### general parameters
-feature_detector_file = 'feature_detector_nets/random/FD_64x48x8_1.save'
-controller_network_filename = 'controller_nets/pursuit_and_gather/NEAT_actionSelection_8_random_sigmoid_1/controller'
-test_controller_net_gen = '1'#435
+feature_detector_file = 'feature_detector_nets/pursuit_and_gather/FD_64x48x16_distanceL_2.save'
+controller_network_filename = 'controller_nets/pursuit_and_gather/NEAT_actionSelection_16_distanceL_sigmoid_2/controller'
+test_controller_net_gen = -1 # -1 to record all generations performance, > -1 to test specific generation 
 doom_scenario = "scenarios/pursuit_and_gather.wad"
 doom_config = "config/pursuit_and_gather.cfg"
 stats_file = "_stats.txt"
@@ -35,13 +35,14 @@ evaluation_filename = "_eval.txt"
 map1 = "map01"
 map2 = "map01"
 
-fd_fitness_factor = FD_Fitness_factor.RANDOM
+fd_fitness_factor = FD_Fitness_factor.VECTOR_DISTANCE_LINEAR
 neat_output_activation = NEAT.ActivationFunction.SIGNED_SIGMOID #NEAT.ActivationFunction.LINEAR
 
-num_features = 8
+num_features = 16
 num_states = 1
 
 isTraining = True
+slowTestEpisode = False #whether test performance episodes should be slowed down
 isCig = False # whether or not the scenario is competition (cig)
 isNEAT = True # choose between NEAT or ES-HyperNEAT
 isFS_NEAT = False # False: start with all inputs linked to all outputs; True: random input-output links
@@ -64,9 +65,9 @@ death_reward = 0.0
 
 initial_health = 100
 
-test_fitness_episodes = 1
-epochs = 200
 evaluation_episodes = 1
+epochs = 300
+test_fitness_episodes = 4
 
 
 if fd_fitness_factor == FD_Fitness_factor.VECTOR_DISTANCE_TANH:
@@ -124,15 +125,15 @@ params.CrossoverRate = 0.70#0.70
 params.InterspeciesCrossoverRate = 0.01#
 params.MutateRemLinkProb = 0.035
 params.RecurrentProb = 0.0015
-params.OverallMutationRate = 0.15 #0.15
+params.OverallMutationRate = 0.25 #0.15
 params.MutateAddLinkProb = 0.09#0.095
 params.MutateAddNeuronProb = 0.03 #0.03
 params.MutateWeightsProb = 0.85 #
-params.WeightMutationMaxPower = 0.5 # 
+params.WeightMutationMaxPower = 1.0 # 
 params.WeightReplacementMaxPower = 1.0 
-params.MutateActivationAProb = 0.002 #
-params.MutateActivationBProb = 0.002 #
-params.ActivationAMutationMaxPower = 0.35 
+#params.MutateActivationAProb = 0.002 #
+#params.MutateActivationBProb = 0.002 #
+#params.ActivationAMutationMaxPower = 0.35 
 params.MutateNeuronActivationTypeProb = 0.03 #
 
 params.ActivationFunction_SignedSigmoid_Prob = 0.0;
@@ -334,7 +335,7 @@ def evaluate(genome):
 		ammo_reward = 0
 		health_reward = 0
 		shaping_reward = 0
-		for ep in range(test_fitness_episodes):
+		for ep in range(evaluation_episodes):
 			if ep % 2 == 0:
 				g = game
 			else:
@@ -411,23 +412,90 @@ def evaluate(genome):
 		print('Exception:', ex)
 		return reward
 
+def play(net,episodes,game,game2,storeStats):
+	reward = 0
+	for ep in range(episodes):
+		if ep % 2 == 0:
+			g = game
+		else:
+			g = game2
+		g.new_episode()
+		states = [None for _ in range(num_states)]
+		while not g.is_episode_finished():
+			s = g.get_state()
+			if s.image_buffer is None:
+				print("Image was None")
+				continue
+			ammo = g.get_game_variable(GameVariable.SELECTED_WEAPON_AMMO)
+			health = max(0,g.get_game_variable(GameVariable.HEALTH))
+			ammo_input = min(float(ammo)/40.0,1.0)
+			health_input = min(float(health)/100.0,1.0)
+			img = convert(s.image_buffer,isColourCorrection)
+			img = img.reshape([1, channels, downsampled_y, downsampled_x])
+			features = fd_network.predict(img).flatten()
+			if binary_threshold > 0:
+				features[features>binary_threshold] = 1
+				features[features<=binary_threshold] = 0
+			#multistate
+			for state in range(num_states-1):
+				states[state] = states[state+1] 
+			states[num_states-1] = features
+			if None in states:
+				continue
+			inp = np.array(states)
+			inp = np.append(inp,[ammo_input,health_input,1.])
+			action = getAction(net,inp)
+			doSkip = skiprate
+			if not isTraining and slowTestEpisode:
+				doSkip = 0
+				sleep(0.028)
+			g.make_action(action,doSkip+1)
+			if g.is_player_dead():
+				break
+		reward += g.get_total_reward()
+	reward = reward / float(episodes)
+	print('Reward: ',reward)
+	if storeStats:
+		#store stats
+		f = open(os.path.dirname(controller_network_filename) + '/' + evaluation_filename,'a')
+		f.write(str(reward) + ',' + str(episodes) + str("\n"))
+		f.close()
 
 #train
 if isTraining:
 	gen = getbest(int(random.random() * 100),controller_network_filename)
 	print('Max score in DOOM:', gen)
 
-
 #test
+if test_controller_net_gen > -1:
+	net = NEAT.NeuralNetwork()
+	net.Load(controller_network_filename + str(test_controller_net_gen) + '.net')
+
+	play(net,test_fitness_episodes,game,game2,False)
+else:
+	#store stats
+	f = open(os.path.dirname(controller_network_filename) + '/' + evaluation_filename,'w')
+	f.write('total reward' + str("\n"))
+	f.close()
+	for gen in range(epochs):
+		net = NEAT.NeuralNetwork()
+		net.Load(controller_network_filename + str(gen+1) + '.net')
+		play(net,test_fitness_episodes,game,game2,True)
+	
+game.close()
+game2.close()
+
+### old
+'''
 net = NEAT.NeuralNetwork()
-net.Load(controller_network_filename + test_controller_net_gen + '.net')
+net.Load(controller_network_filename + str(test_controller_net_gen) + '.net')
 
 #store stats
 f = open(os.path.dirname(controller_network_filename) + '/' + evaluation_filename,'w')
 f.write('total reward' + str("\n"))
 f.close()
 
-for ep in range(evaluation_episodes):
+for ep in range(test_fitness_episodes):
 	if ep % 2 == 0:
 		g = game
 	else:
@@ -458,8 +526,7 @@ for ep in range(evaluation_episodes):
 		sleep(0.028)
 		if g.is_player_dead():
 			break
-
-	print(g.get_total_reward())
+		print(g.get_total_reward())
 	#store stats
 	f = open(os.path.dirname(controller_network_filename) + '/' + evaluation_filename,'a')
 	f.write(str(g.get_total_reward()) + str("\n"))
@@ -467,6 +534,7 @@ for ep in range(evaluation_episodes):
 
 game.close()
 game2.close()
+'''
 ######################################################################
 ######################################################################
 

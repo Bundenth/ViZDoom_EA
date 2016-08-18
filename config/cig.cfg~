@@ -1,7 +1,7 @@
-living_reward = 0.1
+living_reward = 0.5
 
 #1 minute = 2100
-episode_timeout = 1800
+episode_timeout = 1200
 
 # Rendering options
 screen_resolution = RES_160X120
@@ -17,9 +17,9 @@ window_visible = false
 # Available buttons
 available_buttons = 
 	{ 
-		#TURN_LEFT
-		#TURN_RIGHT
-		TURN_LEFT_RIGHT_DELTA
+		TURN_LEFT
+		TURN_RIGHT
+		#TURN_LEFT_RIGHT_DELTA
 		MOVE_FORWARD
 		ATTACK
 	}

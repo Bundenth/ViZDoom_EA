@@ -30,13 +30,13 @@ from learning_framework import *
 import learning_framework
 
 ### general parameters
-cycles = 5
-feature_weights_filename = 'feature_detector_nets/random/FD_64x48x8'
+cycles = 1
+feature_weights_filename = 'feature_detector_nets/pursuit_and_gather/FD_64x48x32_distanceL'
 images_filename = "feature_images/pursuit_and_gather_rgb.dat"
-stats_file = "stats/FD_pursuit_and_gather_rgb_64_distanceT_stats"
+stats_file = "stats/FD_pursuit_and_gather_rgb_32_distanceL_stats"
 test_fd_net_gen = '0'
 
-fd_fitness_factor = FD_Fitness_factor.RANDOM
+fd_fitness_factor = FD_Fitness_factor.VECTOR_DISTANCE_LINEAR
 
 ###this parameters are changed automatically from FD_Fitness_factor type
 isRandom = False # whether the network generated is randomised or evolved
@@ -54,7 +54,7 @@ weight_start = 5.0 # 5.0
 
 population_size = 100
 generations = 400 #number of generations in the evolution process
-num_features = 8 #number of outputs of the CNN compressor (features to learn)
+num_features = 32 #number of outputs of the CNN compressor (features to learn)
 elite_ratio = 0.05 #proportion of top individuals that go to next generation
 
 target_fitness = 0.0 # stop training when this fitness is reached (0 to ignore)
