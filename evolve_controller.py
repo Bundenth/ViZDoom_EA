@@ -234,14 +234,14 @@ def getAction(net,inp):
 
 game = DoomGame()
 CustomDoomGame(game,doom_scenario,doom_config,map1)
-start_game(game,isCig,not isTraining)
+start_game(game,isCig,not isTraining and slowTestEpisode)
 
 if map1 == map2:
 	game2 = game
 else:
 	game2 = DoomGame()
 	CustomDoomGame(game2,doom_scenario,doom_config,map2)
-	start_game(game2,isCig,not isTraining)
+	start_game(game2,isCig,not isTraining and slowTestEpisode)
 
 def getbest(i,controller_network_filename):
 	if not os.path.exists(os.path.dirname(controller_network_filename)):
