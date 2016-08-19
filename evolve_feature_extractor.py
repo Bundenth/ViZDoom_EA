@@ -130,8 +130,6 @@ def evaluate(cnn,individual,training_img_set):
 		img_p = img.reshape([1, channels, downsampled_y, downsampled_x])
 		output = cnn.predict(np.array(img_p))
 		output = output.flatten()
-		#print(output)
-		#sleep(1)
 		if use_shannon_diversity:
 			classification = 0
 			if binary_encoding:
@@ -181,6 +179,7 @@ def evaluate(cnn,individual,training_img_set):
 		iu = np.triu_indices_from(dist,1)
 		distances = dist[iu]
 		fitness = np.mean(distances) + min(distances)
+	print(fitness)
 	return fitness
 
 

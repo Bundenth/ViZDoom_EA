@@ -13,14 +13,14 @@ import itertools as it
 
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation, Flatten
-from keras.layers import Convolution2D, MaxPooling2D
+from keras.layers import Convolution2D, MaxPooling2D, LocallyConnected2D
 from keras.models import model_from_json
 
 # image parameters
 downsampled_x = 64 #64
 downsampled_y = 48#48
 channels = 3 #channels on input image considered (GRAY8 = 1; RGB = 3)
-skiprate = 2
+skiprate = 5
 
 class FD_Fitness_factor(object):
 	VECTOR_DISTANCE_TANH = 0
@@ -92,24 +92,22 @@ def convert(img,colorCorrection=False,num_channels=0):
 
 def create_cnn(input_rows,input_cols,num_outputs,final_activation='sigmoid'):
 	model = Sequential()
-
-	# input: input_colsxinput_rows images with 1 channels
-	# this applies 32 convolution filters of size 3x3 each.
 	'''
-	model.add(Convolution2D(8, 3, 3,
-                        border_mode='valid',
-                        input_shape=(channels, input_rows, input_cols)))
+	# input: input_colsxinput_rows images with 1 channels
+	model.add(LocallyConnected2D(8, 6, 6,
+			border_mode='valid',
+			input_shape=(channels, input_rows, input_cols)))
 	model.add(Activation('relu'))
-	model.add(MaxPooling2D(pool_size=(2, 2))) #32x24
-	model.add(Convolution2D(8, 3, 3))
+	model.add(MaxPooling2D(pool_size=(3, 3)))
+	model.add(LocallyConnected2D(12, 4, 4))
 	model.add(Activation('relu'))
-	model.add(MaxPooling2D(pool_size=(2, 2))) #16x12
-	model.add(Convolution2D(6, 2, 2))
+	model.add(MaxPooling2D(pool_size=(2, 2)))
+	model.add(LocallyConnected2D(16, 3, 3))
 	model.add(Activation('relu'))
-	model.add(MaxPooling2D(pool_size=(2, 2))) #8x6
+	model.add(MaxPooling2D(pool_size=(2, 2)))
 	model.add(Flatten())
-	model.add(Dense(num_outputs))
-	model.add(Activation(final_activation)) # num_outputs
+	model.add(Dense(72,activation='relu'))
+	model.add(Dense(num_outputs,activation=final_activation))
 	
 	model.compile(loss='categorical_crossentropy',
 		optimizer='adadelta',
