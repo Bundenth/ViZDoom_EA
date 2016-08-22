@@ -25,8 +25,8 @@ import learning_framework
 
 
 ### general parameters
-feature_detector_file = 'feature_detector_nets/random/FD_64x48x16_1.save'
-controller_network_filename = 'controller_nets/pursuit_and_gather/NEAT_actionSelection_16_random_sigmoid_1_X2/controller'
+feature_detector_file = 'feature_detector_nets/pursuit_and_gather/FD_64x48x32_distanceL_2.save'
+controller_network_filename = 'controller_nets/pursuit_and_gather/NEAT_actionSelection_32_distanceL_sigmoid_2_X2/controller'
 test_controller_net_gen = -1 # -1 to record all generations performance, > -1 to test specific generation 
 doom_scenario = "scenarios/pursuit_and_gather.wad"
 doom_config = "config/pursuit_and_gather.cfg"
@@ -35,10 +35,10 @@ evaluation_filename = "_eval.txt"
 map1 = "map01"
 map2 = "map01"
 
-fd_fitness_factor = FD_Fitness_factor.RANDOM
+fd_fitness_factor = FD_Fitness_factor.VECTOR_DISTANCE_LINEAR
 neat_output_activation = NEAT.ActivationFunction.SIGNED_SIGMOID #NEAT.ActivationFunction.LINEAR
 
-num_features = 16
+num_features = 32
 num_states = 1
 
 isTraining = True

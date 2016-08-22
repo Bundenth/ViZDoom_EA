@@ -20,7 +20,7 @@ from keras.models import model_from_json
 downsampled_x = 64 #64
 downsampled_y = 48#48
 channels = 3 #channels on input image considered (GRAY8 = 1; RGB = 3)
-skiprate = 5
+skiprate = 3
 
 class FD_Fitness_factor(object):
 	VECTOR_DISTANCE_TANH = 0
@@ -94,24 +94,18 @@ def create_cnn(input_rows,input_cols,num_outputs,final_activation='sigmoid'):
 	model = Sequential()
 	'''
 	# input: input_colsxinput_rows images with 1 channels
-	model.add(LocallyConnected2D(8, 6, 6,
+	model.add(LocallyConnected2D(16, 4, 4,
 			border_mode='valid',
 			input_shape=(channels, input_rows, input_cols)))
 	model.add(Activation('relu'))
-	model.add(MaxPooling2D(pool_size=(3, 3)))
-	model.add(LocallyConnected2D(12, 4, 4))
-	model.add(Activation('relu'))
 	model.add(MaxPooling2D(pool_size=(2, 2)))
-	model.add(LocallyConnected2D(16, 3, 3))
+	model.add(Convolution2D(24, 3, 3))
 	model.add(Activation('relu'))
 	model.add(MaxPooling2D(pool_size=(2, 2)))
 	model.add(Flatten())
 	model.add(Dense(72,activation='relu'))
 	model.add(Dense(num_outputs,activation=final_activation))
 	
-	model.compile(loss='categorical_crossentropy',
-		optimizer='adadelta',
-		metrics=['accuracy'])
 	'''
 	model.add(Convolution2D(18, 7, 7,
 			border_mode='valid',
@@ -127,6 +121,7 @@ def create_cnn(input_rows,input_cols,num_outputs,final_activation='sigmoid'):
 	model.add(Flatten())
 	model.add(Dense(128,activation='relu'))
 	model.add(Dense(num_outputs,activation=final_activation))
+
 	
 	model.compile(loss='categorical_crossentropy',
 		optimizer='adadelta',
