@@ -162,17 +162,20 @@ def evaluate(cnn,individual,training_img_set):
 	#calculate fitness
 	if use_shannon_diversity:
 		fitness = 0.0
-		visited = []
-		for m in range(len(feature_vectors)):
-			m_prop = 0
-			if binary_encoding:
+		if binary_encoding:
+			visited = []
+			for m in range(len(feature_vectors)):
+				m_prop = 0
 				if not feature_vectors[m] in visited:
 					visited.append(feature_vectors[m])
 					m_prop = float(feature_vectors.count(feature_vectors[m])) / float(len(feature_vectors))
-			else:
+				if not m_prop == 0:
+					fitness += m_prop * np.log(m_prop)
+		else:
+			for m in range(num_features):
 				m_prop = float(feature_vectors.count(m)) / float(len(feature_vectors))
-			if not m_prop == 0:
-				fitness += m_prop * np.log(m_prop)
+				if not m_prop == 0:
+					fitness += m_prop * np.log(m_prop)
 		fitness = -fitness
 	else:
 		dist = scipy.spatial.distance.cdist(feature_vectors,feature_vectors,'euclidean')

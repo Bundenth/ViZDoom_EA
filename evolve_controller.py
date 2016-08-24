@@ -25,24 +25,25 @@ import learning_framework
 
 
 ### general parameters
-feature_detector_file = 'feature_detector_nets/pursuit_and_gather/FD_64x48x32_distanceL_2.save'
-controller_network_filename = 'controller_nets/pursuit_and_gather/NEAT_actionSelection_32_distanceL_sigmoid_2_X2/controller'
+feature_detector_file = 'feature_detector_nets/pursuit_and_gather/FD_64x48x16_distanceL_0.save'
+controller_network_filename = 'controller_nets/pursuit_and_gather/NEAT_actionSelection_16_distanceL_linear_0_X2/controller'
 test_controller_net_gen = -1 # -1 to record all generations performance, > -1 to test specific generation 
 doom_scenario = "scenarios/pursuit_and_gather.wad"
 doom_config = "config/pursuit_and_gather.cfg"
 stats_file = "_stats.txt"
-evaluation_filename = "_eval.txt"
+evaluation_filename = "_eval_shooting_only.txt"
 map1 = "map01"
 map2 = "map01"
 
 fd_fitness_factor = FD_Fitness_factor.VECTOR_DISTANCE_LINEAR
-neat_output_activation = NEAT.ActivationFunction.SIGNED_SIGMOID #NEAT.ActivationFunction.LINEAR
+neat_output_activation = NEAT.ActivationFunction.LINEAR #NEAT.ActivationFunction.SIGNED_SIGMOID
 
-num_features = 32
+num_features = 16
 num_states = 1
 
 isTraining = True
 slowTestEpisode = False #whether test performance episodes should be slowed down
+useShapingRewardInTesting = False #count shaping reward when testing performance (shooting)
 isCig = False # whether or not the scenario is competition (cig)
 isNEAT = True # choose between NEAT or ES-HyperNEAT
 isFS_NEAT = False # False: start with all inputs linked to all outputs; True: random input-output links
@@ -414,6 +415,8 @@ def evaluate(genome):
 
 def play(net,episodes,game,game2,storeStats):
 	reward = 0
+	ammo_reward = 0
+	health_reward = 0
 	for ep in range(episodes):
 		if ep % 2 == 0:
 			g = game
@@ -421,6 +424,8 @@ def play(net,episodes,game,game2,storeStats):
 			g = game2
 		g.new_episode()
 		states = [None for _ in range(num_states)]
+		last_ammo = -1
+		last_health = initial_health
 		while not g.is_episode_finished():
 			s = g.get_state()
 			if s.image_buffer is None:
@@ -450,9 +455,19 @@ def play(net,episodes,game,game2,storeStats):
 				doSkip = 0
 				sleep(0.028)
 			g.make_action(action,doSkip+1)
+			if not last_ammo < 0:
+				if ammo < last_ammo:
+					ammo_reward += shoot_reward
+			last_ammo = ammo
+			if health > last_health:
+				health_reward = health_reward + health_kit_reward
+			last_health = health
 			if g.is_player_dead():
 				break
 		reward += g.get_total_reward()
+	
+	if useShapingRewardInTesting:
+		reward += ammo_reward
 	reward = reward / float(episodes)
 	print('Reward: ',reward)
 	if storeStats:
