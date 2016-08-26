@@ -32,6 +32,7 @@ load_previous_net = False # use previously trained network to resume training
 isCig = False
 isTraining = True
 useShapingReward = True
+useShapingRewardInTesting = False
 
 #when using feature detector net
 use_feature_detector = False
@@ -397,6 +398,10 @@ f.close()
 
 for i in range(evaluation_episodes):
 	game.new_episode()
+	ammo_reward = 0
+	reward = 0
+	last_ammo = -1
+    
 	while not game.is_episode_finished():
 		state = convert(game.get_state().image_buffer).reshape([1, channels, downsampled_y, downsampled_x])
 		if not use_feature_detector:
@@ -404,17 +409,25 @@ for i in range(evaluation_episodes):
 		else:
 			s1 = (fd_network.predict(state).flatten()).reshape([1,1,num_features]).astype(np.float32)
 			best_action_index = get_best_action(s1)
-		
+		ammo = game.get_game_variable(GameVariable.SELECTED_WEAPON_AMMO)
 		game.set_action(actions_available[best_action_index])
 		for i in range(0+1):
 			game.advance_action()
 		sleep(0.028)
+		if not last_ammo < 0:
+			if ammo < last_ammo:
+				ammo_reward += shoot_reward
+		last_ammo = ammo
+		if game.is_player_dead():
+			break
 
-	r = game.get_total_reward()
-	print "Total reward: ", r
+	reward = game.get_total_reward()
+	if useShapingRewardInTesting:
+		reward += ammo_reward
+	print "Reward: ", reward
 	#store stats
 	f = open(evaluation_filename,'a')
-	f.write(str(g.get_total_reward()) + str("\n"))
+	f.write(str(reward) + str("\n"))
 	f.close()
 
 game.close()

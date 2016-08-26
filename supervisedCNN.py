@@ -37,8 +37,9 @@ isCig = False
 
 # what task to do
 gather_data = False 
-trainOrLoad = True #True for training, False for loading pretrained network
+trainOrLoad = False #True for training, False for loading pretrained network
 seeEvaluation = False #whether to display the match whilst testing network
+useShapingRewardInTesting = False
 
 training_batch = 32
 training_epochs = 1000
@@ -46,6 +47,8 @@ test_episodes = 100
 
 episodes_recorded = 5																					
 number_actions = 4
+
+shoot_reward = -35.0
 
 training_img_set = []
 labels_set = []
@@ -198,15 +201,16 @@ else:
 	f.write('total reward' + str("\n"))
 	f.close()
 
-
 for i in range(test_episodes):
     print("Episode #" + str(i+1))
     game.new_episode()
 
+    ammo_reward = 0
+    reward = 0
+    last_ammo = -1
     while not game.is_episode_finished():
-
         s = game.get_state()
-
+        ammo = game.get_game_variable(GameVariable.SELECTED_WEAPON_AMMO)
         # Get processed image
         img = convert(s.image_buffer,False).reshape([1, channels, downsampled_y, downsampled_x])
         network_input = []
@@ -218,8 +222,14 @@ for i in range(test_episodes):
         action = [0 for _ in range(number_actions)]
         for i in range(number_actions):
             action[i] = int(output[i])
-        r = game.make_action(action)
+        r = game.make_action(action,skiprate+1)
         sleep(sleep_time)
+        if not last_ammo < 0:
+            if ammo < last_ammo:
+                ammo_reward += shoot_reward
+        last_ammo = ammo
+        if game.is_player_dead():
+            break
         # Display the image here!
         #if game.get_screen_format() in [ScreenFormat.GRAY8, ScreenFormat.DEPTH_BUFFER8]:
         #    img = img.reshape(img.shape[1],img.shape[2],1)
@@ -228,15 +238,16 @@ for i in range(test_episodes):
         #cv2.waitKey(int(sleep_time * 1000))
         
     # Check how the episode went.
-    print("Episode finished.")
-    print("total reward:", game.get_total_reward())
-    print("************************")
-
+    if useShapingRewardInTesting:
+        reward += ammo_reward
+    reward += game.get_total_reward()
+    print("Reward:", reward)
+    
     if not seeEvaluation:
-        #store stats
-        f = open(evaluation_filename,'a')
-        f.write(str(game.get_total_reward()) + str("\n"))
-        f.close()
+	    #store stats
+	    f = open(evaluation_filename,'a')
+	    f.write(str(reward) + str("\n"))
+	    f.close()
 	
 cv2.destroyAllWindows()
 game.close()
