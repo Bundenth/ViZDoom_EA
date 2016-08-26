@@ -161,15 +161,14 @@ def train_network(net):
 	hist = net.fit(tr, np.array(lb), batch_size=training_batch, nb_epoch=training_epochs, verbose=1)
 	#loss_and_metrics = net.evaluate(np.array(tr), np.array(lb), batch_size=training_batch)
 	losses = hist.history['loss']
+	accuracy = hist.history['acc']
 	# store loss and metrics in _stats file??
-	print(losses)
 	f = open(stats_file,'w')
-	f.write('loss' + str("\n"))
-	for l in losses:
-		f.write(str(l) + str("\n"))
+	f.write('loss,accuracy' + str("\n"))
+	for i in range(len(losses)):
+		f.write(str(losses[i]) + ',' + str(accuracy[i]) + str("\n"))
 	f.close()
 	net.save_weights(cnn_weights_filename,overwrite=True)
-	return losses
 
 
 # Create DoomGame instance
@@ -182,7 +181,7 @@ if gather_data:
 
 if trainOrLoad:
 	cnn_network = generate_network()
-	losses = train_network(cnn_network)
+	train_network(cnn_network)
 else:
 	cnn_network = load_network_layout(cnn_layout_filename)
 	load_network_weights(cnn_weights_filename,cnn_network)
@@ -216,7 +215,6 @@ for i in range(test_episodes):
         output[output>0.5] = 1 
         output[output<=0.5] = 0
         output = output.flatten()
-        print("Action selected:",output)
         action = [0 for _ in range(number_actions)]
         for i in range(number_actions):
             action[i] = int(output[i])
