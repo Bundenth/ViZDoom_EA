@@ -36,15 +36,15 @@ stats_file = "supervised_CNN/pursuit_and_gather/_stats_0.txt"
 isCig = False
 
 # what task to do
-gather_data = True 
+gather_data = False 
 trainOrLoad = True #True for training, False for loading pretrained network
 seeEvaluation = False #whether to display the match whilst testing network
 
-training_batch = 64
+training_batch = 32
 training_epochs = 1000
 test_episodes = 100
 
-episodes_recorded = 10																						
+episodes_recorded = 5																					
 number_actions = 4
 
 training_img_set = []
@@ -63,7 +63,7 @@ def gatherData(game):
 			s = game.get_state()
 
 			# Makes a random action and get remember reward.
-			game.advance_action(1)
+			game.advance_action(skiprate+1)
 			action = game.get_last_action()
 			if s.number % 2 == 0:
 				continue
@@ -158,11 +158,18 @@ def train_network(net):
 	print("Loaded labels:", len(lb))
 	tr = np.array(tr).reshape([len(tr), channels, downsampled_y, downsampled_x])
 	lb = np.array(lb)[:,0:number_actions] ########################### TEMPORARY?
-	net.fit(tr, np.array(lb), batch_size=training_batch, nb_epoch=training_epochs, verbose=1)
-	loss_and_metrics = net.evaluate(np.array(tr), np.array(lb), batch_size=training_batch)
+	hist = net.fit(tr, np.array(lb), batch_size=training_batch, nb_epoch=training_epochs, verbose=1)
+	#loss_and_metrics = net.evaluate(np.array(tr), np.array(lb), batch_size=training_batch)
+	losses = hist.history['loss']
 	# store loss and metrics in _stats file??
+	print(losses)
+	f = open(stats_file,'w')
+	f.write('loss' + str("\n"))
+	for l in losses:
+		f.write(str(l) + str("\n"))
+	f.close()
 	net.save_weights(cnn_weights_filename,overwrite=True)
-	return loss_and_metrics
+	return losses
 
 
 # Create DoomGame instance
@@ -175,7 +182,7 @@ if gather_data:
 
 if trainOrLoad:
 	cnn_network = generate_network()
-	loss_and_metrics = train_network(cnn_network)
+	losses = train_network(cnn_network)
 else:
 	cnn_network = load_network_layout(cnn_layout_filename)
 	load_network_weights(cnn_weights_filename,cnn_network)
@@ -206,8 +213,8 @@ for i in range(test_episodes):
         network_input = []
         network_input.append(img)
         output = cnn_network.predict(img)#np.array(network_input))
-        #output[output>0.4] = 1 #not needed as the output is softmax
-        #output[output<=0.4] = 0
+        output[output>0.5] = 1 
+        output[output<=0.5] = 0
         output = output.flatten()
         print("Action selected:",output)
         action = [0 for _ in range(number_actions)]
@@ -227,11 +234,11 @@ for i in range(test_episodes):
     print("total reward:", game.get_total_reward())
     print("************************")
 
-	if not seeEvaluation:
-		#store stats
-		f = open(evaluation_filename,'a')
-		f.write(str(game.get_total_reward()) + str("\n"))
-		f.close()
+    if not seeEvaluation:
+        #store stats
+        f = open(evaluation_filename,'a')
+        f.write(str(game.get_total_reward()) + str("\n"))
+        f.close()
 	
 cv2.destroyAllWindows()
 game.close()
