@@ -24,24 +24,27 @@ import h5py
 from learning_framework import *
 import learning_framework
 
-doom_scenario = "scenarios/cig_orig_pistol.wad"
-playable_doom_config = "config/cig_playable.cfg"
-non_playable_doom_config = "config/cig.cfg"
+doom_scenario = "scenarios/pursuit_and_gather.wad"
+doom_config = "config/pursuit_and_gather.cfg"
 mapSelected = "map01"
-training_data_filename = 'supervised_CNN/cig_orig_pistol_marine_training_data.save'
-cnn_layout_filename = 'supervised_CNN/cig_orig_pistol_marine_cnn_layout.net'
-cnn_weights_filename = 'supervised_CNN/cig_orig_pistol_marine_cnn_weights.h5'
+training_data_filename = 'supervised_CNN/pursuit_and_gather/training_data.save'
+cnn_layout_filename = 'supervised_CNN/pursuit_and_gather/cnn_layout_0.net'
+cnn_weights_filename = 'supervised_CNN/pursuit_and_gather/cnn_weights_0.h5'
+evaluation_filename = "supervised_CNN/pursuit_and_gather/evaluation_0.txt"
+stats_file = "supervised_CNN/pursuit_and_gather/_stats_0.txt"
 
-isCig = True
+isCig = False
 
 # what task to do
-gather_data = False 
-trainOrLoad = False #True for training, False for loading pretrained network
+gather_data = True 
+trainOrLoad = True #True for training, False for loading pretrained network
+seeEvaluation = False #whether to display the match whilst testing network
 
 training_batch = 64
 training_epochs = 1000
+test_episodes = 100
 
-episodes_recorded = 20																							
+episodes_recorded = 10																						
 number_actions = 4
 
 training_img_set = []
@@ -73,7 +76,7 @@ def gatherData(game):
 			# Get processed image
 			# Gray8 shape is not cv2 compliant
 			#img = convert(s.image_buffer)
-			img = convert(s.image_buffer,False)
+			img = convert(s.image_buffer)
 			#rows = len(img[0])
 			#cols = len(img[0][0])
 
@@ -107,18 +110,18 @@ def generate_network():
 	
 	# input: 144x256 images with 1 channels -> (1, 100, 100) tensors.
 	# this applies 32 convolution filters of size 3x3 each.
-	model.add(Convolution2D(24, 5, 5,
+	model.add(Convolution2D(18, 7, 7,
                         border_mode='valid',
                         input_shape=(channels, downsampled_y, downsampled_x)))
 	model.add(Activation('relu'))
-	model.add(Convolution2D(32, 4, 4))
+	model.add(Convolution2D(24, 4, 4))
 	model.add(Activation('relu'))
 	model.add(Convolution2D(32, 3, 3))
 	model.add(Activation('relu'))
 	#model.add(Dropout(0.25))
 
 	model.add(Flatten())
-	model.add(Dense(256))
+	model.add(Dense(128))
 	model.add(Activation('relu'))
 	#model.add(Dropout(0.5))
 	model.add(Dense(number_actions))
@@ -156,14 +159,15 @@ def train_network(net):
 	tr = np.array(tr).reshape([len(tr), channels, downsampled_y, downsampled_x])
 	lb = np.array(lb)[:,0:number_actions] ########################### TEMPORARY?
 	net.fit(tr, np.array(lb), batch_size=training_batch, nb_epoch=training_epochs, verbose=1)
-	loss_and_metrics = net.evaluate(np.array(tr), np.array(lb), batch_size=32)
+	loss_and_metrics = net.evaluate(np.array(tr), np.array(lb), batch_size=training_batch)
+	# store loss and metrics in _stats file??
 	net.save_weights(cnn_weights_filename,overwrite=True)
 	return loss_and_metrics
 
 
 # Create DoomGame instance
 game = DoomGame()
-CustomDoomGame(game,doom_scenario,playable_doom_config,mapSelected)
+CustomDoomGame(game,doom_scenario,doom_config,mapSelected)
 
 if gather_data:
 	start_game(game,isCig,True,Mode.SPECTATOR)
@@ -178,10 +182,16 @@ else:
 
 game.close()
 
-start_game(game,isCig,True)
+start_game(game,isCig,seeEvaluation)
 
-test_episodes = 5
-sleep_time = 0.028
+if seeEvaluation:
+	sleep_time = 0.028
+else:
+	sleep_time = 0.0
+	f = open(evaluation_filename,'w')
+	f.write('total reward' + str("\n"))
+	f.close()
+
 
 for i in range(test_episodes):
     print("Episode #" + str(i+1))
@@ -196,8 +206,8 @@ for i in range(test_episodes):
         network_input = []
         network_input.append(img)
         output = cnn_network.predict(img)#np.array(network_input))
-        output[output>0.4] = 1
-        output[output<=0.4] = 0
+        #output[output>0.4] = 1 #not needed as the output is softmax
+        #output[output<=0.4] = 0
         output = output.flatten()
         print("Action selected:",output)
         action = [0 for _ in range(number_actions)]
@@ -217,6 +227,12 @@ for i in range(test_episodes):
     print("total reward:", game.get_total_reward())
     print("************************")
 
+	if not seeEvaluation:
+		#store stats
+		f = open(evaluation_filename,'a')
+		f.write(str(game.get_total_reward()) + str("\n"))
+		f.close()
+	
 cv2.destroyAllWindows()
 game.close()
 

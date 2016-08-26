@@ -22,31 +22,32 @@ from time import sleep
 from learning_framework import *
 import learning_framework
 
-controller_weights_filename = 'full_RL/custom_controller_weights.save'
-doom_scenario = "scenarios/custom.wad"
-doom_config = "config/custom.cfg"
-evaluation_filename = "full_RL/evaluation.txt"
+controller_weights_filename = 'full_RL/pursuit_and_gather/controller_weights_0.save'
+doom_scenario = "scenarios/pursuit_and_gather.wad"
+doom_config = "config/pursuit_and_gather.cfg"
+evaluation_filename = "full_RL/pursuit_and_gather/evaluation_0.txt"
+stats_file = "full_RL/pursuit_and_gather/_stats_0.txt"
 
 load_previous_net = False # use previously trained network to resume training
 isCig = False
-isTraining = False
-useShapingReward = False
+isTraining = True
+useShapingReward = True
 
 #when using feature detector net
 use_feature_detector = False
 feature_weights_filename = 'feature_detector_nets/custom_FD_64x48x32_weights.save'
-num_features = 32
+num_features = 16
 
-# left,right, forward and shoot and pair-combinations (cig)
-#actions_available = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1], #single actions
-#			[1,0,1,0],[0,1,1,0], #let-right,forward double actions
-#			[1,0,0,1],[0,1,0,1],[0,0,1,1]] #single actions+shoot
+# left,right, forward and shoot and pair-combinations (pursuit and gather)
+actions_available = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1], #single actions
+			[1,0,1,0],[0,1,1,0], #let-right,forward double actions
+			[1,0,0,1],[0,1,0,1],[0,0,1,1]] #single actions+shoot
 #left, right,forward, backward and pair-combinations (health_gathering)
 #actions_available = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1], #single actions
 #			[1,0,1,0], [0,1,1,0], [1,0,0,1], [0,1,0,1]] #let-right,forward,backward double actions
-# left, right, shoot and pair-combinations (defend_centre / custom)
-actions_available = [[1,0,0],[0,1,0],[0,0,1],
-				[1,0,1],[0,1,1]]
+# left, right, shoot and pair-combinations (defend_centre)
+#actions_available = [[1,0,0],[0,1,0],[0,0,1],
+#				[1,0,1],[0,1,1]]
 
 
 # Q-learning settings:
@@ -65,24 +66,20 @@ reward_scale = 0.01
 # Some of the network's and learning settings:
 learning_rate = 0.00001
 batch_size = 32
-epochs = 20
+epochs = 50
 training_steps_per_epoch = 5000
-test_episodes_per_epoch = 100
+test_episodes_per_epoch = 20
 
 # Other parameters
-evaluation_episodes = 10
+evaluation_episodes = 100
 
 #rewards
-ammo_reward = 25.0
-shooting_reward = -10.0
-health_reward = 35.0
+ammo_reward = 50.0
+shooting_reward = -35.0
+health_reward = 75.0
 
 # shaping reward
 initial_health = 100
-last_health = initial_health
-last_ammo = -1
-last_shaping_reward = 0
-
 
 # Replay memory:
 class ReplayMemory:
@@ -161,21 +158,21 @@ def create_network(available_actions_num):
 		dqn = InputLayer(shape=[None, channels, downsampled_y, downsampled_x], input_var=s1)
 
 		# Adds 3 convolutional layers, each followed by a max pooling layer.
-		dqn = Conv2DLayer(dqn, num_filters=32, filter_size=[8, 8],
+		dqn = Conv2DLayer(dqn, num_filters=18, filter_size=[7, 7],
 						  nonlinearity=rectify, W=GlorotUniform("relu"),
 						  b=Constant(.1))
 		dqn = MaxPool2DLayer(dqn, pool_size=[2, 2])
-		dqn = Conv2DLayer(dqn, num_filters=64, filter_size=[4, 4],
+		dqn = Conv2DLayer(dqn, num_filters=24, filter_size=[4, 4],
 						  nonlinearity=rectify, W=GlorotUniform("relu"),
 						  b=Constant(.1))
 
 		dqn = MaxPool2DLayer(dqn, pool_size=[2, 2])
-		dqn = Conv2DLayer(dqn, num_filters=64, filter_size=[3, 3],
+		dqn = Conv2DLayer(dqn, num_filters=32, filter_size=[3, 3],
 						  nonlinearity=rectify, W=GlorotUniform("relu"),
 						  b=Constant(.1))
 		dqn = MaxPool2DLayer(dqn, pool_size=[2, 2])
 		# Adds a single fully connected layer.
-		dqn = DenseLayer(dqn, num_units=512, nonlinearity=rectify, W=GlorotUniform("relu"),
+		dqn = DenseLayer(dqn, num_units=128, nonlinearity=rectify, W=GlorotUniform("relu"),
 						 b=Constant(.1))
 
 		# Adds a single fully connected layer which is the output layer.
@@ -297,6 +294,10 @@ if isTraining:
 	else:
 		fd_network = None
 	print "Starting the training!"
+	
+	f = open(stats_file,'w')
+	f.write("train_mean,train_st_dev,train_max,train_min,train_loss,train_epsilon,test_mean,test_st_dev,test_max,test_min\n")
+	f.close()
 
 	steps = 0
 	for epoch in range(epochs):
@@ -337,7 +338,12 @@ if isTraining:
 
 		print "mean:", train_rewards.mean(), "std:", train_rewards.std(), "max:", train_rewards.max(), "min:", train_rewards.min(), "mean_loss:", mean_loss, "epsilon:", epsilon
 		print "t:", str(round(train_time, 2)) + "s"
-
+		
+		#store training stats
+		f = open(stats_file,'a')
+		f.write(str(train_rewards.mean()) + ',' + str(train_rewards.std()) + ',' + str(train_rewards.max()) + ',' + str(train_rewards.min()) + ',' + str(mean_loss) + ',' + str(epsilon))
+		f.close()
+		
 		# Testing
 		test_episode = []
 		test_rewards = []
@@ -364,7 +370,12 @@ if isTraining:
 		test_rewards = np.array(test_rewards)
 		print "mean:", test_rewards.mean(), "std:", test_rewards.std(), "max:", test_rewards.max(), "min:", test_rewards.min()
 		print "t:", str(round(test_time, 2)) + "s"
-
+		
+		#store testing stats
+		f = open(stats_file,'a')
+		f.write(str(test_rewards.mean()) + ',' + str(test_rewards.std()) + ',' + str(test_rewards.max()) + ',' + str(test_rewards.min()) + str("\n"))
+		f.close()
+		
 		if controller_weights_filename:
 			print "Saving network weigths to:", controller_weights_filename
 			pickle.dump(get_all_param_values(net), open(controller_weights_filename, "w"))

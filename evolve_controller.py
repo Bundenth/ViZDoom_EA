@@ -25,13 +25,13 @@ import learning_framework
 
 
 ### general parameters
-feature_detector_file = 'feature_detector_nets/pursuit_and_gather/FD_64x48x16_distanceL_0.save'
-controller_network_filename = 'controller_nets/pursuit_and_gather/NEAT_actionSelection_16_distanceL_linear_0_X2/controller'
+feature_detector_file = 'feature_detector_nets/pursuit_and_gather/FD_64x48x16_distanceL_3.save'
+controller_network_filename = 'controller_nets/pursuit_and_gather/FSNEAT_actionSelection_16_distanceL_linear_3_X2/controller'
 test_controller_net_gen = -1 # -1 to record all generations performance, > -1 to test specific generation 
 doom_scenario = "scenarios/pursuit_and_gather.wad"
 doom_config = "config/pursuit_and_gather.cfg"
 stats_file = "_stats.txt"
-evaluation_filename = "_eval_shooting_only.txt"
+evaluation_filename = "_eval.txt"
 map1 = "map01"
 map2 = "map01"
 
@@ -46,7 +46,7 @@ slowTestEpisode = False #whether test performance episodes should be slowed down
 useShapingRewardInTesting = False #count shaping reward when testing performance (shooting)
 isCig = False # whether or not the scenario is competition (cig)
 isNEAT = True # choose between NEAT or ES-HyperNEAT
-isFS_NEAT = False # False: start with all inputs linked to all outputs; True: random input-output links
+isFS_NEAT = True # False: start with all inputs linked to all outputs; True: random input-output links
 useShapingReward = False
 isColourCorrection = False
 useActionSelection = True # whether output units are final actions or each unit forms a part of an action
@@ -70,6 +70,10 @@ evaluation_episodes = 2
 epochs = 230
 test_fitness_episodes = 4
 
+if isFS_NEAT:
+	epochs = 650
+
+print('Running epochs:',epochs)
 
 if fd_fitness_factor == FD_Fitness_factor.VECTOR_DISTANCE_TANH:
 	output_activation_function = 'tanh'
