@@ -25,8 +25,8 @@ import learning_framework
 
 
 ### general parameters
-feature_detector_file = 'feature_detector_nets/pursuit_and_gather/FD_64x48x16_distanceL_3.save'
-controller_network_filename = 'controller_nets/pursuit_and_gather/FSNEAT_actionSelection_16_distanceL_linear_3_X2/controller'
+feature_detector_file = 'feature_detector_nets/pursuit_and_gather/FD_64x48x16_distanceL_1.save'
+controller_network_filename = 'controller_nets/pursuit_and_gather/FSNEAT_axisAction_16_distanceL_linear_1_X2/controller'
 test_controller_net_gen = -1 # -1 to record all generations performance, > -1 to test specific generation 
 doom_scenario = "scenarios/pursuit_and_gather.wad"
 doom_config = "config/pursuit_and_gather.cfg"
@@ -49,7 +49,7 @@ isNEAT = True # choose between NEAT or ES-HyperNEAT
 isFS_NEAT = True # False: start with all inputs linked to all outputs; True: random input-output links
 useShapingReward = False
 isColourCorrection = False
-useActionSelection = True # whether output units are final actions or each unit forms a part of an action
+useActionSelection = False # whether output units are final actions or each unit forms a part of an action
 
 
 ###parameters set automatically based on FD_Fitness_factor
@@ -429,7 +429,6 @@ def play(net,episodes,game,game2,storeStats):
 		g.new_episode()
 		states = [None for _ in range(num_states)]
 		last_ammo = -1
-		last_health = initial_health
 		while not g.is_episode_finished():
 			s = g.get_state()
 			if s.image_buffer is None:
@@ -463,9 +462,6 @@ def play(net,episodes,game,game2,storeStats):
 				if ammo < last_ammo:
 					ammo_reward += shoot_reward
 			last_ammo = ammo
-			if health > last_health:
-				health_reward = health_reward + health_kit_reward
-			last_health = health
 			if g.is_player_dead():
 				break
 		reward += g.get_total_reward()

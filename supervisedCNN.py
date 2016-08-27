@@ -42,7 +42,7 @@ seeEvaluation = False #whether to display the match whilst testing network
 useShapingRewardInTesting = False
 
 training_batch = 32
-training_epochs = 1000
+training_epochs = 3000
 test_episodes = 100
 
 episodes_recorded = 5																					
@@ -222,7 +222,7 @@ for i in range(test_episodes):
         action = [0 for _ in range(number_actions)]
         for i in range(number_actions):
             action[i] = int(output[i])
-        r = game.make_action(action,skiprate+1)
+        r = game.make_action(action)
         sleep(sleep_time)
         if not last_ammo < 0:
             if ammo < last_ammo:
