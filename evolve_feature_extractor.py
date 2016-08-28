@@ -30,10 +30,10 @@ from learning_framework import *
 import learning_framework
 
 ### general parameters
-cycles = 1
-feature_weights_filename = 'feature_detector_nets/pursuit_and_gather/LOCAL_FD_64x48x16_distanceL'
-images_filename = "feature_images/pursuit_and_gather_rgb.dat"
-stats_file = "stats/LOCAL_FD_pursuit_and_gather_rgb_16_distanceL_stats"
+cycles = 5
+feature_weights_filename = 'feature_detector_nets/health_gathering_supreme/FD_64x48x16_distanceL'
+images_filename = "feature_images/health_gathering_supreme_rgb.dat"
+stats_file = "stats/FD_health_gathering_supreme_rgb_16_distanceL_stats"
 test_fd_net_gen = '0'
 
 fd_fitness_factor = FD_Fitness_factor.VECTOR_DISTANCE_LINEAR
@@ -182,7 +182,6 @@ def evaluate(cnn,individual,training_img_set):
 		iu = np.triu_indices_from(dist,1)
 		distances = dist[iu]
 		fitness = np.mean(distances) + min(distances)
-	print(fitness)
 	return fitness
 
 

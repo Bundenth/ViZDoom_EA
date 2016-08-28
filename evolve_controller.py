@@ -25,13 +25,13 @@ import learning_framework
 
 
 ### general parameters
-feature_detector_file = 'feature_detector_nets/pursuit_and_gather/FD_64x48x16_distanceL_0.save'
-controller_network_filename = 'controller_nets/pursuit_and_gather/FSNEAT_axisAction_16_distanceL_linear_0_X2/controller'
+feature_detector_file = 'feature_detector_nets/health_gathering_supreme/FD_64x48x16_distanceL_0.save'
+controller_network_filename = 'controller_nets/health_gathering_supreme/NEAT_actionSelection_16_distanceL_linear_0_X2/controller'
 test_controller_net_gen = -1 # -1 to record all generations performance, > -1 to test specific generation 
-doom_scenario = "scenarios/pursuit_and_gather.wad"
-doom_config = "config/pursuit_and_gather.cfg"
+doom_scenario = "scenarios/health_gathering_supreme.wad"
+doom_config = "config/health_gathering_supreme.cfg"
 stats_file = "_stats.txt"
-evaluation_filename = "_eval_shooting_only.txt"
+evaluation_filename = "_eval.txt"
 map1 = "map01"
 map2 = "map01"
 
@@ -41,12 +41,12 @@ neat_output_activation = NEAT.ActivationFunction.LINEAR #NEAT.ActivationFunction
 num_features = 16
 num_states = 1
 
-isTraining = False
+isTraining = True
 slowTestEpisode = False #whether test performance episodes should be slowed down
-useShapingRewardInTesting = True #count shaping reward when testing performance (shooting)
+useShapingRewardInTesting = False #count shaping reward when testing performance (shooting)
 isCig = False # whether or not the scenario is competition (cig)
 isNEAT = True # choose between NEAT or ES-HyperNEAT
-isFS_NEAT = True # False: start with all inputs linked to all outputs; True: random input-output links
+isFS_NEAT = False # False: start with all inputs linked to all outputs; True: random input-output links
 useShapingReward = False
 isColourCorrection = False
 useActionSelection = False # whether output units are final actions or each unit forms a part of an action
