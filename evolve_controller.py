@@ -25,8 +25,8 @@ import learning_framework
 
 
 ### general parameters
-feature_detector_file = 'feature_detector_nets/pursuit_and_gather/FD_64x48x16_distanceL_1.save'
-controller_network_filename = 'controller_nets/pursuit_and_gather/FSNEAT_axisAction_16_distanceL_linear_1_X2/controller'
+feature_detector_file = 'feature_detector_nets/pursuit_and_gather/FD_64x48x16_distanceL_4.save'
+controller_network_filename = 'controller_nets/pursuit_and_gather/FSNEAT_axisAction_16_distanceL_linear_4_X2/controller'
 test_controller_net_gen = -1 # -1 to record all generations performance, > -1 to test specific generation 
 doom_scenario = "scenarios/pursuit_and_gather.wad"
 doom_config = "config/pursuit_and_gather.cfg"
