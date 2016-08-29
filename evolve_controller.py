@@ -25,13 +25,13 @@ import learning_framework
 
 
 ### general parameters
-feature_detector_file = 'feature_detector_nets/health_gathering_supreme/FD_64x48x16_distanceL_0.save'
-controller_network_filename = 'controller_nets/health_gathering_supreme/NEAT_actionSelection_16_distanceL_linear_0_X2/controller'
-test_controller_net_gen = -1 # -1 to record all generations performance, > -1 to test specific generation 
-doom_scenario = "scenarios/health_gathering_supreme.wad"
-doom_config = "config/health_gathering_supreme.cfg"
+feature_detector_file = 'feature_detector_nets/pursuit_and_gather/FD_64x48x16_distanceL_4.save'
+controller_network_filename = 'controller_nets/pursuit_and_gather/NEAT_axisAction_16_distanceL_linear_4_X2/controller'
+test_controller_net_gen = 221 # -1 to test all generations performance, > -1 to test specific generation 
+doom_scenario = "scenarios/pursuit_and_gather.wad"
+doom_config = "config/pursuit_and_gather.cfg"
 stats_file = "_stats.txt"
-evaluation_filename = "_eval.txt"
+evaluation_filename = "_evalBEST.txt"
 map1 = "map01"
 map2 = "map01"
 
@@ -41,13 +41,13 @@ neat_output_activation = NEAT.ActivationFunction.LINEAR #NEAT.ActivationFunction
 num_features = 16
 num_states = 1
 
-isTraining = True
+isTraining = False
+recordPerformance = True
 slowTestEpisode = False #whether test performance episodes should be slowed down
-useShapingRewardInTesting = False #count shaping reward when testing performance (shooting)
+useShapingRewardInTesting = False #count shaping reward when testing performance (shooting, USER1)
 isCig = False # whether or not the scenario is competition (cig)
 isNEAT = True # choose between NEAT or ES-HyperNEAT
 isFS_NEAT = False # False: start with all inputs linked to all outputs; True: random input-output links
-useShapingReward = False
 isColourCorrection = False
 useActionSelection = False # whether output units are final actions or each unit forms a part of an action
 
@@ -58,17 +58,28 @@ binary_threshold = 0.0 # threshold to consider output active (1) or inactive (0)
 ###
 
 reward_multiplier = 1
-shoot_reward = -35.0
-health_kit_reward = 75.0 #75.0
-harm_reward = 0
-ammo_pack_reward = 50.0 #50.0
+if "health_gathering_supreme" in doom_scenario:
+	health_kit_reward = 0.0
+	shoot_reward = 0.0
+	ammo_pack_reward = 0.0
+else:
+	health_kit_reward = 75.0 #75.0
+	shoot_reward = -35.0
+	ammo_pack_reward = 50.0 #50.0
+harm_reward = 0.0
 death_reward = 0.0
 
 initial_health = 100
 
 evaluation_episodes = 2
 epochs = 230
-test_fitness_episodes = 4
+if recordPerformance and test_controller_net_gen > -1:
+	recorded_test_episodes = 100
+	test_fitness_episodes = 1
+else:
+	recorded_test_episodes = epochs
+	test_fitness_episodes = 4
+
 
 if isFS_NEAT:
 	epochs = 650
@@ -100,7 +111,10 @@ if useActionSelection:
 	#				[1,0,1],[0,1,1]]
 else:
 	actions_available = 4
-	number_actions = 3 #axis + shoot
+	if "health_gathering_supreme" in doom_scenario:
+		number_actions = 2 #axis
+	else:
+		number_actions = 3 #axis + shoot
 	input_dead_zone = 1000
 
 
@@ -220,8 +234,12 @@ def getAction(net,inp):
 			action[1] = 1
 		if output[1] > input_dead_zone:
 			action[2] = 1
-		if output[2] > input_dead_zone:
-			action[3] = 1
+		if "health_gathering_supreme" in doom_scenario:
+			if output[1] < -input_dead_zone:
+				action[3] = 1
+		else:
+			if output[2] > input_dead_zone:
+				action[3] = 1
 		'''
 		if output[0] > 0.5 + input_dead_zone/2.0:
 			action[0] = 1
@@ -405,23 +423,23 @@ def evaluate(genome):
 					reward += death_reward 
 					break
 			# use shaping rewards to reinforce behaviours
-			if useShapingReward:
-				reward += doom_fixed_to_double(g.get_game_variable(GameVariable.USER1))
+			shaping_reward += doom_fixed_to_double(g.get_game_variable(GameVariable.USER1))
 			reward += g.get_total_reward() * reward_multiplier
 			#if counter * (skiprate + 1) > training_length:
 			#	break
-		reward += ammo_reward + health_reward
+		reward += ammo_reward + health_reward + shaping_reward
 		return reward
 
 	except Exception as ex:
 		print('Exception:', ex)
 		return reward
 
-def play(net,episodes,game,game2,storeStats):
+def play(net,game,game2):
 	reward = 0
 	ammo_reward = 0
 	health_reward = 0
-	for ep in range(episodes):
+	shaping_reward = 0
+	for ep in range(test_fitness_episodes):
 		if ep % 2 == 0:
 			g = game
 		else:
@@ -464,16 +482,20 @@ def play(net,episodes,game,game2,storeStats):
 			last_ammo = ammo
 			if g.is_player_dead():
 				break
-		reward += g.get_total_reward()
+		# use shaping rewards to reinforce behaviours
+		shaping_reward += doom_fixed_to_double(g.get_game_variable(GameVariable.USER1))
+		reward += g.get_total_reward() * reward_multiplier
 	
 	if useShapingRewardInTesting:
 		reward += ammo_reward
-	reward = reward / float(episodes)
+		reward += shaping_reward
+			
+	reward = reward / float(test_fitness_episodes)
 	print('Reward: ',reward)
-	if storeStats:
+	if recordPerformance:
 		#store stats
 		f = open(os.path.dirname(controller_network_filename) + '/' + evaluation_filename,'a')
-		f.write(str(reward) + ',' + str(episodes) + str("\n"))
+		f.write(str(reward) + ',' + str(test_fitness_episodes) + str("\n"))
 		f.close()
 
 #train
@@ -482,20 +504,23 @@ if isTraining:
 	print('Max score in DOOM:', gen)
 
 #test
-if test_controller_net_gen > -1:
-	net = NEAT.NeuralNetwork()
-	net.Load(controller_network_filename + str(test_controller_net_gen) + '.net')
-
-	play(net,test_fitness_episodes,game,game2,False)
-else:
+if recordPerformance:
 	#store stats
 	f = open(os.path.dirname(controller_network_filename) + '/' + evaluation_filename,'w')
 	f.write('total reward' + str("\n"))
 	f.close()
-	for gen in range(epochs):
+
+if test_controller_net_gen > -1:
+	net = NEAT.NeuralNetwork()
+	net.Load(controller_network_filename + str(test_controller_net_gen) + '.net')
+
+	for gen in range(recorded_test_episodes):
+		play(net,game,game2)
+else:
+	for gen in range(recorded_test_episodes):
 		net = NEAT.NeuralNetwork()
 		net.Load(controller_network_filename + str(gen+1) + '.net')
-		play(net,test_fitness_episodes,game,game2,True)
+		play(net,game,game2)
 	
 game.close()
 game2.close()

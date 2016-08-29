@@ -22,11 +22,11 @@ from time import sleep
 from learning_framework import *
 import learning_framework
 
-controller_weights_filename = 'full_RL/pursuit_and_gather/controller_weights_3.save'
-doom_scenario = "scenarios/pursuit_and_gather.wad"
-doom_config = "config/pursuit_and_gather.cfg"
-evaluation_filename = "full_RL/pursuit_and_gather/evaluation_3.txt"
-stats_file = "full_RL/pursuit_and_gather/_stats_3.txt"
+controller_weights_filename = 'full_RL/health_gathering_supreme/controller_weights_0.save'
+doom_scenario = "scenarios/health_gathering_supreme.wad"
+doom_config = "config/health_gathering_supreme.cfg"
+evaluation_filename = "full_RL/health_gathering_supreme/evaluation_0.txt"
+stats_file = "full_RL/health_gathering_supreme/_stats_0.txt"
 
 load_previous_net = False # use previously trained network to resume training
 isCig = False
@@ -40,13 +40,15 @@ use_feature_detector = False
 feature_weights_filename = 'feature_detector_nets/custom_FD_64x48x32_weights.save'
 num_features = 16
 
-# left,right, forward and shoot and pair-combinations (pursuit and gather)
-actions_available = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1], #single actions
-			[1,0,1,0],[0,1,1,0], #let-right,forward double actions
-			[1,0,0,1],[0,1,0,1],[0,0,1,1]] #single actions+shoot
-#left, right,forward, backward and pair-combinations (health_gathering)
-#actions_available = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1], #single actions
-#			[1,0,1,0], [0,1,1,0], [1,0,0,1], [0,1,0,1]] #let-right,forward,backward double actions
+if "health_gathering_supreme" in doom_scenario:
+	#left, right,forward, backward and pair-combinations (health_gathering)
+	actions_available = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1], #single actions
+				[1,0,1,0], [0,1,1,0], [1,0,0,1], [0,1,0,1]] #let-right,forward,backward double actions
+else:
+	# left,right, forward and shoot and pair-combinations (pursuit and gather)
+	actions_available = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1], #single actions
+				[1,0,1,0],[0,1,1,0], #let-right,forward double actions
+				[1,0,0,1],[0,1,0,1],[0,0,1,1]] #single actions+shoot
 # left, right, shoot and pair-combinations (defend_centre)
 #actions_available = [[1,0,0],[0,1,0],[0,0,1],
 #				[1,0,1],[0,1,1]]
@@ -76,10 +78,15 @@ test_episodes_per_epoch = 20
 evaluation_episodes = 100
 
 #rewards
-ammo_reward = 50.0
-shooting_reward = -35.0
-health_reward = 75.0
-
+if "health_gathering_supreme" in doom_scenario:
+	ammo_reward = 0.0
+	shooting_reward = 0.0
+	health_reward = 0.0
+else:
+	ammo_reward = 50.0
+	shooting_reward = -35.0
+	health_reward = 75.0
+	
 # shaping reward
 initial_health = 100
 
@@ -226,24 +233,21 @@ def perform_learning_step():
     reward = game.make_action(actions_available[a], skiprate + 1)
     
     #shaping rewards
-    if useShapingReward:
-		ammo = game.get_game_variable(GameVariable.SELECTED_WEAPON_AMMO)
-		if not memory.last_ammo < 0:
-			if ammo > memory.last_ammo:
-				reward += ammo_reward
-			if ammo < memory.last_ammo:
-				reward += shooting_reward
-		memory.last_ammo = ammo
-		health = max(0,game.get_game_variable(GameVariable.HEALTH))
-		if health > memory.last_health:
-			reward += health_reward
-		memory.last_health = health
-		sr = doom_fixed_to_double(game.get_game_variable(GameVariable.USER1))
-		if sr > 0:
-			print("aaaaaaghhhhhhhhhh")
-		sr = sr - memory.last_shaping_reward
-		memory.last_shaping_reward += sr
-		reward += sr
+    ammo = game.get_game_variable(GameVariable.SELECTED_WEAPON_AMMO)
+	if not memory.last_ammo < 0:
+		if ammo > memory.last_ammo:
+			reward += ammo_reward
+		if ammo < memory.last_ammo:
+			reward += shooting_reward
+	memory.last_ammo = ammo
+	health = max(0,game.get_game_variable(GameVariable.HEALTH))
+	if health > memory.last_health:
+		reward += health_reward
+	memory.last_health = health
+	sr = doom_fixed_to_double(game.get_game_variable(GameVariable.USER1))
+	sr = sr - memory.last_shaping_reward
+	memory.last_shaping_reward += sr
+	reward += sr
 	
     reward *= reward_scale
 
