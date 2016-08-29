@@ -22,17 +22,18 @@ from time import sleep
 from learning_framework import *
 import learning_framework
 
-controller_weights_filename = 'full_RL/pursuit_and_gather/controller_weights_0.save'
+controller_weights_filename = 'full_RL/pursuit_and_gather/controller_weights_3.save'
 doom_scenario = "scenarios/pursuit_and_gather.wad"
 doom_config = "config/pursuit_and_gather.cfg"
-evaluation_filename = "full_RL/pursuit_and_gather/evaluation_0.txt"
-stats_file = "full_RL/pursuit_and_gather/_stats_0.txt"
+evaluation_filename = "full_RL/pursuit_and_gather/evaluation_3.txt"
+stats_file = "full_RL/pursuit_and_gather/_stats_3.txt"
 
 load_previous_net = False # use previously trained network to resume training
 isCig = False
 isTraining = True
 useShapingReward = True
 useShapingRewardInTesting = False
+slowTestEpisode = False
 
 #when using feature detector net
 use_feature_detector = False
@@ -57,8 +58,8 @@ discount_factor = 0.99
 start_epsilon = float(1.0)
 end_epsilon = float(0.1)
 epsilon = start_epsilon
-static_epsilon_steps = 5000
-epsilon_decay_steps = 20000
+static_epsilon_steps = 10000
+epsilon_decay_steps = 50000
 epsilon_decay_stride = (start_epsilon - end_epsilon) / epsilon_decay_steps
 
 # Max reward is about 100 (for killing) so it'll be normalized
@@ -67,7 +68,7 @@ reward_scale = 0.01
 # Some of the network's and learning settings:
 learning_rate = 0.00001
 batch_size = 32
-epochs = 50
+epochs = 200
 training_steps_per_epoch = 5000
 test_episodes_per_epoch = 20
 
@@ -238,6 +239,8 @@ def perform_learning_step():
 			reward += health_reward
 		memory.last_health = health
 		sr = doom_fixed_to_double(game.get_game_variable(GameVariable.USER1))
+		if sr > 0:
+			print("aaaaaaghhhhhhhhhh")
 		sr = sr - memory.last_shaping_reward
 		memory.last_shaping_reward += sr
 		reward += sr
@@ -342,7 +345,7 @@ if isTraining:
 		
 		#store training stats
 		f = open(stats_file,'a')
-		f.write(str(train_rewards.mean()) + ',' + str(train_rewards.std()) + ',' + str(train_rewards.max()) + ',' + str(train_rewards.min()) + ',' + str(mean_loss) + ',' + str(epsilon))
+		f.write(str(train_rewards.mean()) + ',' + str(train_rewards.std()) + ',' + str(train_rewards.max()) + ',' + str(train_rewards.min()) + ',' + str(mean_loss) + ',' + str(epsilon) + ',')
 		f.close()
 		
 		# Testing
@@ -387,14 +390,17 @@ print "Time to watch!"
 
 game = DoomGame()
 CustomDoomGame(game,doom_scenario,doom_config)
-start_game(game,isCig,True)
+start_game(game,isCig,slowTestEpisode)
 
 # Sleeping time between episodes, for convenience.
-episode_sleep = 0.5
+if slowTestEpisode:
+	episode_sleep = 0.028
+else:
+	episode_sleep = 0.0
+	f = open(evaluation_filename,'w')
+	f.write('total reward' + str("\n"))
+	f.close()
 
-f = open(evaluation_filename,'w')
-f.write('total reward' + str("\n"))
-f.close()
 
 for i in range(evaluation_episodes):
 	game.new_episode()
@@ -413,10 +419,10 @@ for i in range(evaluation_episodes):
 		game.set_action(actions_available[best_action_index])
 		for i in range(0+1):
 			game.advance_action()
-		sleep(0.028)
+		sleep(episode_sleep)
 		if not last_ammo < 0:
 			if ammo < last_ammo:
-				ammo_reward += shoot_reward
+				ammo_reward += shooting_reward
 		last_ammo = ammo
 		if game.is_player_dead():
 			break
@@ -425,9 +431,10 @@ for i in range(evaluation_episodes):
 	if useShapingRewardInTesting:
 		reward += ammo_reward
 	print "Reward: ", reward
-	#store stats
-	f = open(evaluation_filename,'a')
-	f.write(str(reward) + str("\n"))
-	f.close()
+	if not slowTestEpisode:
+		#store stats
+		f = open(evaluation_filename,'a')
+		f.write(str(reward) + str("\n"))
+		f.close()
 
 game.close()
