@@ -30,10 +30,10 @@ from learning_framework import *
 import learning_framework
 
 ### general parameters
-cycles = 5
-feature_weights_filename = 'feature_detector_nets/health_gathering_supreme/FD_64x48x16_distanceL'
-images_filename = "feature_images/health_gathering_supreme_rgb.dat"
-stats_file = "stats/FD_health_gathering_supreme_rgb_16_distanceL_stats"
+cycles = 3
+feature_weights_filename = 'feature_detector_nets/cig/FD_64x48x16_distanceL'
+images_filename = "feature_images/cig_orig_rocket_marine_rgb.dat"
+stats_file = "stats/FD_cigorig_rocket_marine_rgb_16_distanceL_stats"
 test_fd_net_gen = '0'
 
 fd_fitness_factor = FD_Fitness_factor.VECTOR_DISTANCE_LINEAR

@@ -22,11 +22,11 @@ from time import sleep
 from learning_framework import *
 import learning_framework
 
-controller_weights_filename = 'full_RL/health_gathering_supreme/controller_weights_0.save'
+controller_weights_filename = 'full_RL/health_gathering_supreme/controller_weights_4.save'
 doom_scenario = "scenarios/health_gathering_supreme.wad"
 doom_config = "config/health_gathering_supreme.cfg"
-evaluation_filename = "full_RL/health_gathering_supreme/evaluation_0.txt"
-stats_file = "full_RL/health_gathering_supreme/_stats_0.txt"
+evaluation_filename = "full_RL/health_gathering_supreme/evaluation_4.txt"
+stats_file = "full_RL/health_gathering_supreme/_stats_4.txt"
 
 load_previous_net = False # use previously trained network to resume training
 isCig = False
@@ -234,20 +234,20 @@ def perform_learning_step():
     
     #shaping rewards
     ammo = game.get_game_variable(GameVariable.SELECTED_WEAPON_AMMO)
-	if not memory.last_ammo < 0:
-		if ammo > memory.last_ammo:
-			reward += ammo_reward
-		if ammo < memory.last_ammo:
-			reward += shooting_reward
-	memory.last_ammo = ammo
-	health = max(0,game.get_game_variable(GameVariable.HEALTH))
-	if health > memory.last_health:
-		reward += health_reward
-	memory.last_health = health
-	sr = doom_fixed_to_double(game.get_game_variable(GameVariable.USER1))
-	sr = sr - memory.last_shaping_reward
-	memory.last_shaping_reward += sr
-	reward += sr
+    if not memory.last_ammo < 0:
+        if ammo > memory.last_ammo:
+            reward += ammo_reward
+        if ammo < memory.last_ammo:
+            reward += shooting_reward
+    memory.last_ammo = ammo
+    health = max(0,game.get_game_variable(GameVariable.HEALTH))
+    if health > memory.last_health:
+        reward += health_reward
+    memory.last_health = health
+    sr = doom_fixed_to_double(game.get_game_variable(GameVariable.USER1))
+    sr = sr - memory.last_shaping_reward
+    memory.last_shaping_reward += sr
+    reward += sr
 	
     reward *= reward_scale
 
