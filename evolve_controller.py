@@ -25,9 +25,9 @@ import learning_framework
 
 
 ### general parameters
-feature_detector_file = 'feature_detector_nets/pursuit_and_gather/FD_64x48x16_distanceL_4.save'
-controller_network_filename = 'controller_nets/pursuit_and_gather/NEAT_axisAction_16_distanceL_linear_4_X2/controller'
-test_controller_net_gen = 221 # -1 to test all generations performance, > -1 to test specific generation 
+feature_detector_file = 'feature_detector_nets/cig/FD_64x48x16_distanceL_0.save'
+controller_network_filename = 'controller_nets/cig/NEAT_axisAction_16_distanceL_linear_0_X2/controller'
+test_controller_net_gen = -1 # -1 to test all generations performance, > -1 to test specific generation 
 doom_scenario = "scenarios/pursuit_and_gather.wad"
 doom_config = "config/pursuit_and_gather.cfg"
 stats_file = "_stats.txt"
@@ -41,7 +41,7 @@ neat_output_activation = NEAT.ActivationFunction.LINEAR #NEAT.ActivationFunction
 num_features = 16
 num_states = 1
 
-isTraining = False
+isTraining = True
 recordPerformance = True
 slowTestEpisode = False #whether test performance episodes should be slowed down
 useShapingRewardInTesting = False #count shaping reward when testing performance (shooting, USER1)
@@ -64,15 +64,15 @@ if "health_gathering_supreme" in doom_scenario:
 	ammo_pack_reward = 0.0
 else:
 	health_kit_reward = 75.0 #75.0
-	shoot_reward = -35.0
+	shoot_reward = -5.0
 	ammo_pack_reward = 50.0 #50.0
 harm_reward = 0.0
 death_reward = 0.0
 
 initial_health = 100
 
-evaluation_episodes = 2
-epochs = 230
+evaluation_episodes = 4
+epochs = 1000
 if recordPerformance and test_controller_net_gen > -1:
 	recorded_test_episodes = 100
 	test_fitness_episodes = 1
@@ -115,8 +115,10 @@ else:
 		number_actions = 2 #axis
 	else:
 		number_actions = 3 #axis + shoot
-	input_dead_zone = 1000
-
+	if 'linear' in output_activation_function:
+		input_dead_zone = 1000
+	else:
+		input_dead_zone = 0.4
 
 #load feature detector network
 fd_network = create_cnn(downsampled_y,downsampled_x,num_features,output_activation_function)
