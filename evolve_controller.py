@@ -28,10 +28,10 @@ import learning_framework
 feature_detector_file = 'feature_detector_nets/cig/FD_64x48x16_distanceL_0.save'
 controller_network_filename = 'controller_nets/cig/NEAT_axisAction_16_distanceL_linear_0_X2/controller'
 test_controller_net_gen = -1 # -1 to test all generations performance, > -1 to test specific generation 
-doom_scenario = "scenarios/pursuit_and_gather.wad"
-doom_config = "config/pursuit_and_gather.cfg"
+doom_scenario = "scenarios/cig_orig_rocket.wad"
+doom_config = "config/cig.cfg"
 stats_file = "_stats.txt"
-evaluation_filename = "_evalBEST.txt"
+evaluation_filename = "_eval.txt"
 map1 = "map01"
 map2 = "map01"
 
@@ -43,9 +43,9 @@ num_states = 1
 
 isTraining = True
 recordPerformance = True
-slowTestEpisode = False #whether test performance episodes should be slowed down
+slowTestEpisode = not isTraining #whether test performance episodes should be slowed down
 useShapingRewardInTesting = False #count shaping reward when testing performance (shooting, USER1)
-isCig = False # whether or not the scenario is competition (cig)
+isCig = True # whether or not the scenario is competition (cig)
 isNEAT = True # choose between NEAT or ES-HyperNEAT
 isFS_NEAT = False # False: start with all inputs linked to all outputs; True: random input-output links
 isColourCorrection = False
@@ -64,14 +64,14 @@ if "health_gathering_supreme" in doom_scenario:
 	ammo_pack_reward = 0.0
 else:
 	health_kit_reward = 75.0 #75.0
-	shoot_reward = -5.0
+	shoot_reward = -10.0
 	ammo_pack_reward = 50.0 #50.0
 harm_reward = 0.0
 death_reward = 0.0
 
 initial_health = 100
 
-evaluation_episodes = 4
+evaluation_episodes = 3
 epochs = 1000
 if recordPerformance and test_controller_net_gen > -1:
 	recorded_test_episodes = 100

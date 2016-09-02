@@ -22,22 +22,22 @@ from time import sleep
 from learning_framework import *
 import learning_framework
 
-controller_weights_filename = 'full_RL/health_gathering_supreme/controller_weights_4.save'
-doom_scenario = "scenarios/health_gathering_supreme.wad"
-doom_config = "config/health_gathering_supreme.cfg"
-evaluation_filename = "full_RL/health_gathering_supreme/evaluation_4.txt"
-stats_file = "full_RL/health_gathering_supreme/_stats_4.txt"
+controller_weights_filename = 'FD_RL/cig/controller_weights_0.save'
+doom_scenario = "scenarios/cig_orig_rocket.wad"
+doom_config = "config/cig.cfg"
+evaluation_filename = "FD_RL/cig/evaluation_0.txt"
+stats_file = "FD_RL/cig/_stats_0.txt"
 
-load_previous_net = False # use previously trained network to resume training
-isCig = False
-isTraining = True
+load_previous_net = True # use previously trained network to resume training
+isCig = True
+isTraining = False
 useShapingReward = True
 useShapingRewardInTesting = False
-slowTestEpisode = False
+slowTestEpisode = True
 
 #when using feature detector net
-use_feature_detector = False
-feature_weights_filename = 'feature_detector_nets/custom_FD_64x48x32_weights.save'
+use_feature_detector = True
+feature_weights_filename = 'feature_detector_nets/cig/FD_64x48x16_distanceL_0.save'
 num_features = 16
 
 if "health_gathering_supreme" in doom_scenario:
@@ -70,7 +70,7 @@ reward_scale = 0.01
 # Some of the network's and learning settings:
 learning_rate = 0.00001
 batch_size = 32
-epochs = 200
+epochs = 1000
 training_steps_per_epoch = 5000
 test_episodes_per_epoch = 20
 
@@ -82,10 +82,12 @@ if "health_gathering_supreme" in doom_scenario:
 	ammo_reward = 0.0
 	shooting_reward = 0.0
 	health_reward = 0.0
+	harm_reward = 0.0
 else:
 	ammo_reward = 50.0
-	shooting_reward = -35.0
+	shooting_reward = -10.0
 	health_reward = 75.0
+	harm_reward = -50.0
 	
 # shaping reward
 initial_health = 100
@@ -243,6 +245,8 @@ def perform_learning_step():
     health = max(0,game.get_game_variable(GameVariable.HEALTH))
     if health > memory.last_health:
         reward += health_reward
+    if health < memory.last_health - 5:
+		reward += harm_reward
     memory.last_health = health
     sr = doom_fixed_to_double(game.get_game_variable(GameVariable.USER1))
     sr = sr - memory.last_shaping_reward
@@ -297,7 +301,7 @@ if isTraining:
 	start_game(game,isCig,False)
 	print "Doom initialized."
 	if use_feature_detector:
-		fd_network = create_cnn(downsampled_y,downsampled_x,num_features)
+		fd_network = create_cnn(downsampled_y,downsampled_x,num_features,'linear')
 		fd_network.load_weights(feature_weights_filename)
 	else:
 		fd_network = None
@@ -395,6 +399,12 @@ print "Time to watch!"
 game = DoomGame()
 CustomDoomGame(game,doom_scenario,doom_config)
 start_game(game,isCig,slowTestEpisode)
+
+if use_feature_detector:
+	fd_network = create_cnn(downsampled_y,downsampled_x,num_features,'linear')
+	fd_network.load_weights(feature_weights_filename)
+else:
+	fd_network = None
 
 # Sleeping time between episodes, for convenience.
 if slowTestEpisode:
