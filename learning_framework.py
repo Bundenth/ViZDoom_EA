@@ -20,7 +20,7 @@ from keras.models import model_from_json
 downsampled_x = 64 #64
 downsampled_y = 48#48
 channels = 3 #channels on input image considered (GRAY8 = 1; RGB = 3)
-skiprate = 8
+skiprate = 5
 
 class FD_Fitness_factor(object):
 	VECTOR_DISTANCE_TANH = 0

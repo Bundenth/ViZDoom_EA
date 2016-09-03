@@ -22,21 +22,21 @@ from time import sleep
 from learning_framework import *
 import learning_framework
 
-controller_weights_filename = 'FD_RL/cig/controller_weights_0.save'
+controller_weights_filename = 'full_RL/cig/controller_weights_0.save'
 doom_scenario = "scenarios/cig_orig_rocket.wad"
 doom_config = "config/cig.cfg"
-evaluation_filename = "FD_RL/cig/evaluation_0.txt"
-stats_file = "FD_RL/cig/_stats_0.txt"
+evaluation_filename = "full_RL/cig/evaluation_0.txt"
+stats_file = "full_RL/cig/_stats_0.txt"
 
-load_previous_net = True # use previously trained network to resume training
+load_previous_net = False # use previously trained network to resume training
 isCig = True
-isTraining = False
+isTraining = True
 useShapingReward = True
 useShapingRewardInTesting = False
 slowTestEpisode = True
 
 #when using feature detector net
-use_feature_detector = True
+use_feature_detector = False
 feature_weights_filename = 'feature_detector_nets/cig/FD_64x48x16_distanceL_0.save'
 num_features = 16
 
@@ -55,7 +55,7 @@ else:
 
 
 # Q-learning settings:
-replay_memory_size = 10000
+replay_memory_size = 20000
 discount_factor = 0.99
 start_epsilon = float(1.0)
 end_epsilon = float(0.1)
@@ -70,9 +70,9 @@ reward_scale = 0.01
 # Some of the network's and learning settings:
 learning_rate = 0.00001
 batch_size = 32
-epochs = 1000
+epochs = 500
 training_steps_per_epoch = 5000
-test_episodes_per_epoch = 20
+test_episodes_per_epoch = 10
 
 # Other parameters
 evaluation_episodes = 100
@@ -169,21 +169,21 @@ def create_network(available_actions_num):
 		dqn = InputLayer(shape=[None, channels, downsampled_y, downsampled_x], input_var=s1)
 
 		# Adds 3 convolutional layers, each followed by a max pooling layer.
-		dqn = Conv2DLayer(dqn, num_filters=18, filter_size=[7, 7],
+		dqn = Conv2DLayer(dqn, num_filters=32, filter_size=[7, 7],
 						  nonlinearity=rectify, W=GlorotUniform("relu"),
 						  b=Constant(.1))
 		dqn = MaxPool2DLayer(dqn, pool_size=[2, 2])
-		dqn = Conv2DLayer(dqn, num_filters=24, filter_size=[4, 4],
+		dqn = Conv2DLayer(dqn, num_filters=48, filter_size=[4, 4],
 						  nonlinearity=rectify, W=GlorotUniform("relu"),
 						  b=Constant(.1))
 
-		dqn = MaxPool2DLayer(dqn, pool_size=[2, 2])
-		dqn = Conv2DLayer(dqn, num_filters=32, filter_size=[3, 3],
+		#dqn = MaxPool2DLayer(dqn, pool_size=[2, 2])
+		dqn = Conv2DLayer(dqn, num_filters=64, filter_size=[3, 3],
 						  nonlinearity=rectify, W=GlorotUniform("relu"),
 						  b=Constant(.1))
-		dqn = MaxPool2DLayer(dqn, pool_size=[2, 2])
+		#dqn = MaxPool2DLayer(dqn, pool_size=[2, 2])
 		# Adds a single fully connected layer.
-		dqn = DenseLayer(dqn, num_units=128, nonlinearity=rectify, W=GlorotUniform("relu"),
+		dqn = DenseLayer(dqn, num_units=384, nonlinearity=rectify, W=GlorotUniform("relu"),
 						 b=Constant(.1))
 
 		# Adds a single fully connected layer which is the output layer.

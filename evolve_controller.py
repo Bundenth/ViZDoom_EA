@@ -27,7 +27,7 @@ import learning_framework
 ### general parameters
 feature_detector_file = 'feature_detector_nets/cig/FD_64x48x16_distanceL_0.save'
 controller_network_filename = 'controller_nets/cig/NEAT_axisAction_16_distanceL_linear_0_X2/controller'
-test_controller_net_gen = -1 # -1 to test all generations performance, > -1 to test specific generation 
+test_controller_net_gen = 121 # -1 to test all generations performance, > -1 to test specific generation 
 doom_scenario = "scenarios/cig_orig_rocket.wad"
 doom_config = "config/cig.cfg"
 stats_file = "_stats.txt"
@@ -41,7 +41,7 @@ neat_output_activation = NEAT.ActivationFunction.LINEAR #NEAT.ActivationFunction
 num_features = 16
 num_states = 1
 
-isTraining = True
+isTraining = False
 recordPerformance = True
 slowTestEpisode = not isTraining #whether test performance episodes should be slowed down
 useShapingRewardInTesting = False #count shaping reward when testing performance (shooting, USER1)
