@@ -20,7 +20,7 @@ from keras.models import model_from_json
 downsampled_x = 64 #64
 downsampled_y = 48#48
 channels = 3 #channels on input image considered (GRAY8 = 1; RGB = 3)
-skiprate = 5
+skiprate = 3
 
 class FD_Fitness_factor(object):
 	VECTOR_DISTANCE_TANH = 0
@@ -92,19 +92,23 @@ def convert(img,colorCorrection=False,num_channels=0):
 
 def create_cnn(input_rows,input_cols,num_outputs,final_activation='sigmoid'):
 	model = Sequential()
-	'''
+	
 	# input: input_colsxinput_rows images with 1 channels
-	model.add(LocallyConnected2D(16, 4, 4,
+	model.add(Convolution2D(32, 7, 7,
 			border_mode='valid',
-			input_shape=(channels, input_rows, input_cols)))
+			input_shape=(channels, input_rows, input_cols),subsample=[4,4]))
 	model.add(Activation('relu'))
-	model.add(MaxPooling2D(pool_size=(2, 2)))
-	model.add(Convolution2D(24, 3, 3))
+	#model.add(MaxPooling2D(pool_size=(2, 2)))
+	model.add(Convolution2D(48, 4, 4,subsample=[2,2]))
 	model.add(Activation('relu'))
-	model.add(MaxPooling2D(pool_size=(2, 2)))
+	#model.add(MaxPooling2D(pool_size=(2, 2)))
+	model.add(Convolution2D(64, 3, 3))
+	model.add(Activation('relu'))
+	#model.add(MaxPooling2D(pool_size=(2, 2)))
 	model.add(Flatten())
-	model.add(Dense(72,activation='relu'))
+	model.add(Dense(384,activation='relu'))
 	model.add(Dense(num_outputs,activation=final_activation))
+
 	
 	'''
 	model.add(Convolution2D(18, 7, 7,
@@ -121,7 +125,7 @@ def create_cnn(input_rows,input_cols,num_outputs,final_activation='sigmoid'):
 	model.add(Flatten())
 	model.add(Dense(128,activation='relu'))
 	model.add(Dense(num_outputs,activation=final_activation))
-
+	'''
 	
 	model.compile(loss='categorical_crossentropy',
 		optimizer='adadelta',
