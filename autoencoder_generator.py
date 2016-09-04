@@ -24,7 +24,7 @@ from MultiNEAT import GetGenomeList, ZipFitness, EvaluateGenomeList_Serial, Eval
 from learning_framework import *
 import learning_framework
 
-image_data_filename = "feature_images/cig_rgb.dat"
+image_data_filename = "feature_images/cig_orig_rocket_marine_rgb.dat"
 autoencoder_weights_filename = "autoencoders/encoder_weights_8x8x6.save"
 autoencoder_topology_filename = "autoencoders/topologies/encoder_topology_8x8x6.save"
 
@@ -32,35 +32,36 @@ def train_autoencoder():
 	#http://blog.keras.io/building-autoencoders-in-keras.html
 	input_img = Input(shape=(channels, downsampled_y, downsampled_x))
 
-	x = Convolution2D(24, 3, 3, activation='relu', border_mode='same')(input_img)
+	x = Convolution2D(32, 6, 6, activation='relu', border_mode='same')(input_img)
 	x = MaxPooling2D((2, 2), border_mode='same')(x)
-	x = Convolution2D(8, 3, 3, activation='relu', border_mode='same')(x) 
+	x = Convolution2D(24, 3, 3, activation='relu', border_mode='same')(x) 
 	x = MaxPooling2D((2, 2), border_mode='same')(x) 
-	x = Convolution2D(4, 3, 3, activation='relu', border_mode='same')(x)
+	x = Convolution2D(16, 2, 2, activation='relu', border_mode='same')(x)
 	encoded = MaxPooling2D((2, 2), border_mode='same')(x)
 
 	# at this point the representation is (8, 8, 6) i.e. 384-dimensional
 
-	x = Convolution2D(4, 3, 3, activation='relu', border_mode='same')(encoded)
+	x = Convolution2D(16, 2, 2, activation='relu', border_mode='same')(encoded)
 	x = UpSampling2D((2, 2))(x)
-	x = Convolution2D(8, 3, 3, activation='relu', border_mode='same')(x)
+	x = Convolution2D(24, 3, 3, activation='relu', border_mode='same')(x)
 	x = UpSampling2D((2, 2))(x) 
-	x = Convolution2D(24, 3, 3, activation='relu')(x) 
+	x = Convolution2D(32, 1, 1, activation='relu')(x) 
 	x = UpSampling2D((2, 2))(x)
 	decoded = Convolution2D(channels, 3, 3, activation='sigmoid', border_mode='same')(x)
 	
+	print('compiling CNN')
 	autoencoder = Model(input=input_img, output=decoded)
 	autoencoder.compile(optimizer='adadelta', loss='binary_crossentropy')
-
+	print('loading training data')
 	f = open(image_data_filename,'rb')
 	training_img_set = cPickle.load(f)
 	f.close()
-	
+	print('preparing data')
 	x_train = np.array(training_img_set).reshape([len(training_img_set),channels,downsampled_y,downsampled_x])
 	np.random.shuffle(x_train)
-	
+	print('training')
 	early_stopping = EarlyStopping(monitor='val_loss', patience=50000,mode='min')
-	hist = autoencoder.fit(x_train,x_train,nb_epoch=3000,batch_size=4,shuffle=True,verbose=1) #validation_split=0.01,callbacks=[early_stopping]
+	hist = autoencoder.fit(x_train,x_train,nb_epoch=5000,batch_size=2,shuffle=True,verbose=1,validation_split=0.05,callbacks=[early_stopping])
 	
 	#print(hist.history['loss'])
 	
@@ -78,7 +79,7 @@ def train_autoencoder():
 	
 	#saving model and weights
 	encoder = Model(input=input_img,output=encoded)
-	encoder.save_weights(autoencoder_filename,overwrite=True)
+	encoder.save_weights(autoencoder_weights_filename,overwrite=True)
 	json_string = encoder.to_json()
 	f = open(autoencoder_topology_filename,'wb')
 	cPickle.dump(json_string,f,protocol=cPickle.HIGHEST_PROTOCOL)
