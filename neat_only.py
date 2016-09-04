@@ -1,12 +1,6 @@
 #!/usr/bin/python
 from __future__ import print_function
-from vizdoom import DoomGame
-from vizdoom import Mode
-from vizdoom import Button
-from vizdoom import GameVariable
-from vizdoom import ScreenFormat
-from vizdoom import ScreenResolution
-# Or just use from vizdoom import *
+from vizdoom import *
 
 from random import choice
 import random
@@ -31,18 +25,18 @@ from learning_framework import *
 import learning_framework
 
 controller_network_filename = 'NEAT_test/evolved_net.net'
-doom_scenario = "scenarios/cig_orig_pistol.wad"
-doom_config = "config/cig.cfg"
+doom_scenario = "scenarios/pursuit_and_gather.wad"
+doom_config = "config/pursuit_and_gather.cfg"
 stats_file = "_stats.txt"
 
 isTraining = False
-isCig = True
+isCig = False
 
 #needs further downsampling to make it feasible
-downsampled_x = 44 #64
-downsampled_y = 32#48
+#downsampled_x = 64 #64
+#downsampled_y = 48#48
 
-reward_multiplier = 5
+reward_multiplier = 1
 shoot_reward = -35.0
 health_kit_reward = 75.0 #75.0
 harm_reward = 0
@@ -55,67 +49,103 @@ input_dead_zone = 0.2
 test_fitness_episodes = 2
 epochs = 1000
 
-initial_health = 99
-
-#HyperNEAT parameters
-inputs = []
-hidden = []
-for c in range(channels):
-	for i in range(downsampled_y):
-		for j in range(downsampled_x):
-			inputs += [(i-(downsampled_y/2.),j-(downsampled_x/2.),c-channels/2.)]
-inputs += [(1,0,-1.),(0,0,-1.),(-1,0,-1.)]
+initial_health = 100
 
 #NEAT parameters and initialisation
 params = NEAT.Parameters()
-params.PopulationSize = 100#
+params.PopulationSize = 80#
 # dist = c1*E/N + c2*D/N + c3*W
 # E -> excess; D = disjoint; W -> average weight difference
 params.DynamicCompatibility = True #
-params.CompatTreshold = 15.0 #
+params.CompatTreshold = 5.0 #
 params.DisjointCoeff = 1.0#
 params.ExcessCoeff = 1.0#
-params.WeightDiffCoeff = 0.2#
+params.WeightDiffCoeff = 0.4#
 params.YoungAgeTreshold = 5 #fitness multiplier for young species
-params.YoungAgeFitnessBoost = 1.35
-params.SpeciesMaxStagnation = 20 #number of generations without improvement allowed for species
-params.OldAgeTreshold = 40# 
+params.YoungAgeFitnessBoost = 1.5
+params.SpeciesMaxStagnation = 30 #number of generations without improvement allowed for species
+params.OldAgeTreshold = 50# 
 params.MinSpecies = 2 #
 params.MaxSpecies = 8 #
 params.EliteFraction = 0.1 #
 params.RouletteWheelSelection = False 
-params.CrossoverRate = 0.70#
-params.InterspeciesCrossoverRate = 0.001#
-params.MutateRemLinkProb = 0.015 
+params.CrossoverRate = 0.70#0.70
+params.InterspeciesCrossoverRate = 0.01#
+params.MutateRemLinkProb = 0.035
 params.RecurrentProb = 0.0015
-params.OverallMutationRate = 0.15 
-params.MutateAddLinkProb = 0.095#0.05-0.3
-params.MutateAddNeuronProb = 0.03 #
+params.OverallMutationRate = 0.25 #0.15
+params.MutateAddLinkProb = 0.09#0.095
+params.MutateAddNeuronProb = 0.03 #0.03
 params.MutateWeightsProb = 0.85 #
-params.WeightMutationMaxPower = 0.5 # 
+params.WeightMutationMaxPower = 1.0 # 
 params.WeightReplacementMaxPower = 1.0 
-params.MutateActivationAProb = 0.002 #
-params.MutateActivationBProb = 0.002 #
-params.ActivationAMutationMaxPower = 0.35 
+#params.MutateActivationAProb = 0.002 #
+#params.MutateActivationBProb = 0.002 #
+#params.ActivationAMutationMaxPower = 0.35 
 params.MutateNeuronActivationTypeProb = 0.03 #
+
 params.ActivationFunction_SignedSigmoid_Prob = 1.0;
 params.ActivationFunction_UnsignedSigmoid_Prob = 0.0;
-params.ActivationFunction_Tanh_Prob = 1.0;
+params.ActivationFunction_Tanh_Prob = 0.0;
 params.ActivationFunction_TanhCubic_Prob = 0.0;
 params.ActivationFunction_SignedStep_Prob = 0.0;
 params.ActivationFunction_UnsignedStep_Prob = 0.0;
-params.ActivationFunction_SignedGauss_Prob = 1.0;
+params.ActivationFunction_SignedGauss_Prob = 0.0;
 params.ActivationFunction_UnsignedGauss_Prob = 0.0;
 params.ActivationFunction_Abs_Prob = 0.0;
-params.ActivationFunction_SignedSine_Prob = 1.0;
+params.ActivationFunction_SignedSine_Prob = 0.0;
 params.ActivationFunction_UnsignedSine_Prob = 0.0;
-params.ActivationFunction_Linear_Prob = 1.0;
+params.ActivationFunction_Linear_Prob = 0.0;
+params.ActivationFunction_Relu_Prob = 1.0;
+params.ActivationFunction_Softplus_Prob = 0.0;
 
+#HyperNEAT parameters
+substrate_inputs = []
+for c in range(channels):
+	for i in range(downsampled_y):
+		for j in range(downsampled_x):
+			substrate_inputs += [(i-(downsampled_y/2.),j-(downsampled_x/2.),c-channels/2.)]
+substrate_inputs += [(1,0,-1.),(0,0,-1.),(-1,0,-1.)]
+substrate_hidden = []
+substrate_outputs = []
+for i in range(number_actions):
+	substrate_outputs += [(i/(number_actions/2.)-1,0.,1.)]
+substrate = NEAT.Substrate(substrate_inputs,
+						   [],
+						   substrate_outputs)
+substrate.m_allow_hidden_hidden_links = True 
+substrate.m_allow_output_hidden_links = True 
+substrate.m_allow_looped_hidden_links = False 
+substrate.m_allow_looped_output_links = False 
+substrate.m_allow_input_hidden_links = True 
+substrate.m_allow_input_output_links = True# 
+substrate.m_allow_hidden_output_links = True
+substrate.m_hidden_nodes_activation = NEAT.ActivationFunction.RELU 
+substrate.m_output_nodes_activation = NEAT.ActivationFunction.SIGNED_SIGMOID 
+substrate.m_with_distance = False 
+#substrate.m_max_weight_and_bias = 8.0# 
+
+params.DivisionThreshold = 0.5;
+params.VarianceThreshold = 0.03;
+params.BandThreshold = 0.3;
+params.InitialDepth = 2;
+params.MaxDepth = 4;
+params.IterationLevel = 1;
+params.Leo = False;
+params.GeometrySeed = False;
+params.LeoSeed = False;
+params.LeoThreshold = 0.3;
+params.CPPN_Bias = -1.0;
+params.Qtree_X = 0.0;
+params.Qtree_Y = 0.0;
+params.Width = 2.;
+params.Height = 2.;
+params.Elitism = 0.1;
 
 def getAction(net,inp):
 	net.Flush()
 	net.Input(inp.tolist())
-	[net.Activate() for _ in range(4)]
+	[net.Activate() for _ in range(5)]
 	output = net.Output()
 	action = [0 for _ in range(actions_available)]
 	if output[0] > input_dead_zone:
@@ -124,8 +154,6 @@ def getAction(net,inp):
 		action[1] = 1
 	if output[1] > input_dead_zone:
 		action[2] = 1
-	#if output[1] < -input_dead_zone:
-	#	action[3] = 1
 	if output[2] > input_dead_zone:
 		action[3] = 1
 	return action
@@ -135,7 +163,7 @@ def evaluate(genome):
 	net = NEAT.NeuralNetwork()
 	reward = 0
 	try:
-		genome.BuildPhenotype(net)
+		genome.BuildESHyperNEATPhenotype(net, substrate, params)
 		# do stuff and return the fitness
 		ammo_reward = 0
 		health_reward = 0
@@ -174,9 +202,8 @@ def evaluate(genome):
 					health_reward = health_reward + (health - last_health) * harm_reward
 				last_health = health
 				if game.is_player_dead():
-					#reward += death_reward 
 					break
-			reward += game.get_total_reward() * reward_multiplier
+			reward += game.get_total_reward() * reward_multiplier + doom_fixed_to_double(game.get_game_variable(GameVariable.USER1))
 		reward += ammo_reward + health_reward
 		return reward
 
@@ -192,12 +219,12 @@ def getbest(i):
 	f.close()
 
 	g = NEAT.Genome(0,
-		len(inputs),
-		0,
-		number_actions,
+		substrate.GetMinCPPNInputs(),
+		len(substrate_hidden),
+		substrate.GetMinCPPNOutputs(),
 		False,
-		NEAT.ActivationFunction.TANH_CUBIC,
-		NEAT.ActivationFunction.TANH,
+		NEAT.ActivationFunction.SIGNED_SIGMOID,
+		NEAT.ActivationFunction.RELU,
 		0,
 		params)
 
@@ -220,7 +247,7 @@ def getbest(i):
 		best_index = fitnesses.index(best)
 		print("Best index: ",best_index,"; Genome details: ", genome_list[best_index].NumNeurons(),genome_list[best_index].NumLinks())
 		net = NEAT.NeuralNetwork()
-		genome_list[best_index].BuildPhenotype(net)
+		genome_list[best_index].BuildESHyperNEATPhenotype(net, substrate, params)
 		print("Species: ",len(pop.Species))
 		print("*****")
 		
@@ -245,16 +272,8 @@ CustomDoomGame(game,doom_scenario,doom_config,"map01")
 start_game(game,isCig,not isTraining)
 
 if isTraining:
-	gens = []
-	for run in range(10):
-		gen = getbest(run)
-		gens += [gen]
-		print('Run:', run, 'Max score in DOOM:', gen)
-	avg_gens = sum(gens) / len(gens)
-
-	print('All:', gens)
-	print('Average:', avg_gens)
-
+	gen = getbest(int(random.random() * 100))
+	print('Max score in DOOM:', gen)
 
 #test
 net = NEAT.NeuralNetwork()

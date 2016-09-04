@@ -46,17 +46,17 @@ if "health_gathering_supreme" in doom_scenario:
 				[1,0,1,0], [0,1,1,0], [1,0,0,1], [0,1,0,1]] #let-right,forward,backward double actions
 else:
 	# left,right, forward and shoot and pair-combinations (pursuit and gather)
-	#actions_available = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1], #single actions
-	#			[1,0,1,0],[0,1,1,0], #let-right,forward double actions
-	#			[1,0,0,1],[0,1,0,1],[0,0,1,1]] #single actions+shoot
+	actions_available = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1], #single actions
+				[1,0,1,0],[0,1,1,0], #let-right,forward double actions
+				[1,0,0,1],[0,1,0,1],[0,0,1,1]] #single actions+shoot
 	#left,right,strafe both, forward, shoot
-	actions_available = [ [1,0,0,0,0,0],[0,1,0,0,0,0],[0,0,1,0,0,0],[0,0,0,1,0,0],[0,0,0,0,1,0],[0,0,0,0,0,1],
-				[1,0,0,0,1,0],[0,0,0,0,1,0],
-				[1,0,0,0,0,1],[0,1,0,0,0,1],[0,0,1,0,0,1],[0,0,0,1,0,1],[0,0,0,0,1,1]]
+	#actions_available = [ [1,0,0,0,0,0],[0,1,0,0,0,0],[0,0,1,0,0,0],[0,0,0,1,0,0],[0,0,0,0,1,0],[0,0,0,0,0,1],
+	#			[1,0,0,0,1,0],[0,0,0,0,1,0],
+	#			[1,0,0,0,0,1],[0,1,0,0,0,1],[0,0,1,0,0,1],[0,0,0,1,0,1],[0,0,0,0,1,1]]
 
 # Q-learning settings:
 replay_memory_size = 20000
-discount_factor = 0.95
+discount_factor = 0.99
 start_epsilon = float(1.0)
 end_epsilon = float(0.1)
 epsilon = start_epsilon
