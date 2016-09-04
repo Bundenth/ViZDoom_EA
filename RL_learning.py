@@ -9,7 +9,7 @@ from vizdoom import *
 import cv2
 import numpy as np
 import theano
-from lasagne.init import GlorotUniform, Constant
+from lasagne.init import GlorotUniform, Constant, HeNormal
 from lasagne.layers import Conv2DLayer, InputLayer, DenseLayer, MaxPool2DLayer, get_output, get_all_params, \
     get_all_param_values, set_all_param_values
 from lasagne.nonlinearities import rectify
@@ -22,11 +22,11 @@ from time import sleep
 from learning_framework import *
 import learning_framework
 
-controller_weights_filename = 'full_RL/cig/controller_weights_0.save'
-doom_scenario = "scenarios/cig_orig_rocket.wad"
+controller_weights_filename = 'full_RL/cig/controller_weights_pistol_0.save'
+doom_scenario = "scenarios/cig_orig_pistol.wad"
 doom_config = "config/cig.cfg"
-evaluation_filename = "full_RL/cig/evaluation_0.txt"
-stats_file = "full_RL/cig/_stats_0.txt"
+evaluation_filename = "full_RL/cig/evaluation_pistol_0.txt"
+stats_file = "full_RL/cig/_pistol_stats_0.txt"
 
 load_previous_net = False # use previously trained network to resume training
 isCig = True
@@ -46,22 +46,22 @@ if "health_gathering_supreme" in doom_scenario:
 				[1,0,1,0], [0,1,1,0], [1,0,0,1], [0,1,0,1]] #let-right,forward,backward double actions
 else:
 	# left,right, forward and shoot and pair-combinations (pursuit and gather)
-	actions_available = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1], #single actions
-				[1,0,1,0],[0,1,1,0], #let-right,forward double actions
-				[1,0,0,1],[0,1,0,1],[0,0,1,1]] #single actions+shoot
-# left, right, shoot and pair-combinations (defend_centre)
-#actions_available = [[1,0,0],[0,1,0],[0,0,1],
-#				[1,0,1],[0,1,1]]
-
+	#actions_available = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1], #single actions
+	#			[1,0,1,0],[0,1,1,0], #let-right,forward double actions
+	#			[1,0,0,1],[0,1,0,1],[0,0,1,1]] #single actions+shoot
+	#left,right,strafe both, forward, shoot
+	actions_available = [ [1,0,0,0,0,0],[0,1,0,0,0,0],[0,0,1,0,0,0],[0,0,0,1,0,0],[0,0,0,0,1,0],[0,0,0,0,0,1],
+				[1,0,0,0,1,0],[0,0,0,0,1,0],
+				[1,0,0,0,0,1],[0,1,0,0,0,1],[0,0,1,0,0,1],[0,0,0,1,0,1],[0,0,0,0,1,1]]
 
 # Q-learning settings:
 replay_memory_size = 20000
-discount_factor = 0.99
+discount_factor = 0.95
 start_epsilon = float(1.0)
 end_epsilon = float(0.1)
 epsilon = start_epsilon
 static_epsilon_steps = 10000
-epsilon_decay_steps = 50000
+epsilon_decay_steps = 100000
 epsilon_decay_stride = (start_epsilon - end_epsilon) / epsilon_decay_steps
 
 # Max reward is about 100 (for killing) so it'll be normalized
@@ -69,7 +69,7 @@ reward_scale = 0.01
 
 # Some of the network's and learning settings:
 learning_rate = 0.00001
-batch_size = 32
+batch_size = 48
 epochs = 500
 training_steps_per_epoch = 5000
 test_episodes_per_epoch = 10
@@ -85,7 +85,7 @@ if "health_gathering_supreme" in doom_scenario:
 	harm_reward = 0.0
 else:
 	ammo_reward = 50.0
-	shooting_reward = -10.0
+	shooting_reward = -30.0
 	health_reward = 75.0
 	harm_reward = -50.0
 	
@@ -170,20 +170,20 @@ def create_network(available_actions_num):
 
 		# Adds 3 convolutional layers, each followed by a max pooling layer.
 		dqn = Conv2DLayer(dqn, num_filters=32, filter_size=[7, 7],
-						  nonlinearity=rectify, W=GlorotUniform("relu"),
-						  b=Constant(.1))
-		dqn = MaxPool2DLayer(dqn, pool_size=[2, 2])
+						  nonlinearity=rectify, W=HeNormal("relu"),
+						  b=Constant(.1),stride=4)
+		#dqn = MaxPool2DLayer(dqn, pool_size=[2, 2])
 		dqn = Conv2DLayer(dqn, num_filters=48, filter_size=[4, 4],
-						  nonlinearity=rectify, W=GlorotUniform("relu"),
-						  b=Constant(.1))
+						  nonlinearity=rectify, W=HeNormal("relu"),
+						  b=Constant(.1),stride=2)
 
 		#dqn = MaxPool2DLayer(dqn, pool_size=[2, 2])
 		dqn = Conv2DLayer(dqn, num_filters=64, filter_size=[3, 3],
-						  nonlinearity=rectify, W=GlorotUniform("relu"),
-						  b=Constant(.1))
+						  nonlinearity=rectify, W=HeNormal("relu"),
+						  b=Constant(.1),stride=1)
 		#dqn = MaxPool2DLayer(dqn, pool_size=[2, 2])
 		# Adds a single fully connected layer.
-		dqn = DenseLayer(dqn, num_units=384, nonlinearity=rectify, W=GlorotUniform("relu"),
+		dqn = DenseLayer(dqn, num_units=512, nonlinearity=rectify, W=HeNormal("relu"),
 						 b=Constant(.1))
 
 		# Adds a single fully connected layer which is the output layer.
@@ -252,7 +252,7 @@ def perform_learning_step():
     sr = sr - memory.last_shaping_reward
     memory.last_shaping_reward += sr
     reward += sr
-	
+    
     reward *= reward_scale
 
     if game.is_episode_finished():
@@ -373,6 +373,8 @@ if isTraining:
 					
 					
 				game.make_action(actions_available[best_action_index], skiprate + 1)
+				if game.is_player_dead():
+					break
 			r = game.get_total_reward()
 			test_rewards.append(r)
 
