@@ -22,15 +22,15 @@ from time import sleep
 from learning_framework import *
 import learning_framework
 
-controller_weights_filename = 'full_RL/cig/controller_weights_pistol_0.save'
-doom_scenario = "scenarios/cig_orig_pistol.wad"
-doom_config = "config/cig.cfg"
-evaluation_filename = "full_RL/cig/evaluation_pistol_0.txt"
-stats_file = "full_RL/cig/_pistol_stats_0.txt"
+controller_weights_filename = 'full_RL/pursuit_and_gather/controller_weights_0.save'
+doom_scenario = "scenarios/pursuit_and_gather.wad"
+doom_config = "config/pursuit_and_gather.cfg"
+evaluation_filename = "full_RL/pursuit_and_gather/evaluation_0.txt"
+stats_file = "full_RL/pursuit_and_gather/_stats_0.txt"
 
-load_previous_net = False # use previously trained network to resume training
-isCig = True
-isTraining = True
+load_previous_net = True # use previously trained network to resume training
+isCig = False
+isTraining = False
 useShapingReward = True
 useShapingRewardInTesting = False
 slowTestEpisode = True
@@ -170,20 +170,20 @@ def create_network(available_actions_num):
 
 		# Adds 3 convolutional layers, each followed by a max pooling layer.
 		dqn = Conv2DLayer(dqn, num_filters=32, filter_size=[7, 7],
-						  nonlinearity=rectify, W=HeNormal("relu"),
-						  b=Constant(.1),stride=4)
-		#dqn = MaxPool2DLayer(dqn, pool_size=[2, 2])
+						  nonlinearity=rectify, W=GlorotUniform("relu"),
+						  b=Constant(.1))
+		dqn = MaxPool2DLayer(dqn, pool_size=[2, 2])
 		dqn = Conv2DLayer(dqn, num_filters=48, filter_size=[4, 4],
-						  nonlinearity=rectify, W=HeNormal("relu"),
-						  b=Constant(.1),stride=2)
+						  nonlinearity=rectify, W=GlorotUniform("relu"),
+						  b=Constant(.1))
 
-		#dqn = MaxPool2DLayer(dqn, pool_size=[2, 2])
+		dqn = MaxPool2DLayer(dqn, pool_size=[2, 2])
 		dqn = Conv2DLayer(dqn, num_filters=64, filter_size=[3, 3],
-						  nonlinearity=rectify, W=HeNormal("relu"),
-						  b=Constant(.1),stride=1)
-		#dqn = MaxPool2DLayer(dqn, pool_size=[2, 2])
+						  nonlinearity=rectify, W=GlorotUniform("relu"),
+						  b=Constant(.1))
+		dqn = MaxPool2DLayer(dqn, pool_size=[2, 2])
 		# Adds a single fully connected layer.
-		dqn = DenseLayer(dqn, num_units=512, nonlinearity=rectify, W=HeNormal("relu"),
+		dqn = DenseLayer(dqn, num_units=128, nonlinearity=rectify, W=GlorotUniform("relu"),
 						 b=Constant(.1))
 
 		# Adds a single fully connected layer which is the output layer.

@@ -25,8 +25,8 @@ import learning_framework
 
 
 ### general parameters
-feature_detector_file = 'feature_detector_nets/cig/FD_64x48x16_distanceL_stride_0.save'
-controller_network_filename = 'controller_nets/cig/NEAT_axisAction_16_distanceL_linear_stride__0_X2/controller'
+feature_detector_file = 'feature_detector_nets/cig/FD_64x48x16_distanceL_hires_0.save'
+controller_network_filename = 'controller_nets/cig/NEAT_axisAction_16_distanceL_hires_damage_linear__0_X2/controller'
 test_controller_net_gen = -1 # -1 to test all generations performance, > -1 to test specific generation 
 doom_scenario = "scenarios/cig_orig_rocket.wad"
 doom_config = "config/cig.cfg"
@@ -64,7 +64,7 @@ if "health_gathering_supreme" in doom_scenario:
 	ammo_pack_reward = 0.0
 else:
 	health_kit_reward = 75.0 #75.0
-	shoot_reward = -10.0
+	shoot_reward = -5.0
 	ammo_pack_reward = 50.0 #50.0
 harm_reward = 0.0
 death_reward = 0.0
@@ -72,7 +72,7 @@ death_reward = 0.0
 initial_health = 100
 
 evaluation_episodes = 3
-epochs = 1000
+epochs = 1500
 if recordPerformance and test_controller_net_gen > -1:
 	recorded_test_episodes = 100
 	test_fitness_episodes = 1
@@ -114,9 +114,9 @@ else:
 	if "health_gathering_supreme" in doom_scenario:
 		number_actions = 2 #axis
 	else:
-		number_actions = 3 #axis + shoot
+		number_actions = 3
 	if 'linear' in output_activation_function:
-		input_dead_zone = 1000
+		input_dead_zone = 10000
 	else:
 		input_dead_zone = 0.4
 
@@ -242,18 +242,7 @@ def getAction(net,inp):
 		else:
 			if output[2] > input_dead_zone:
 				action[3] = 1
-		'''
-		if output[0] > 0.5 + input_dead_zone/2.0:
-			action[0] = 1
-		if output[0] < 0.5 - input_dead_zone/2.0:
-			action[1] = 1
-		if output[1] > 0.5 + input_dead_zone/2.0:
-			action[2] = 1
-		if output[1] < 0.5 - input_dead_zone/2.0:
-			action[3] = 1
-		if output[2] > input_dead_zone:
-			action[4] = 1
-		'''
+		
 		return action
 
 

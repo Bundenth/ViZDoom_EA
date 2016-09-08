@@ -17,10 +17,10 @@ from keras.layers import Convolution2D, MaxPooling2D, LocallyConnected2D
 from keras.models import model_from_json
 
 # image parameters
-downsampled_x = 64 #64
-downsampled_y = 48#48
+downsampled_x = 128 #64
+downsampled_y = 96#48
 channels = 3 #channels on input image considered (GRAY8 = 1; RGB = 3)
-skiprate = 3
+skiprate = 2
 
 class FD_Fitness_factor(object):
 	VECTOR_DISTANCE_TANH = 0
@@ -70,16 +70,11 @@ def convert(img,colorCorrection=False,num_channels=0):
 		img_p = img.reshape([1,downsampled_y,downsampled_x])
 	else:
 		if colorCorrection:
-			'''
-			clip = (255-np.mean(img)) * 0.1#10
-			clahe = cv2.createCLAHE(clipLimit=clip, tileGridSize=(16,16))
-			img_lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
-			lab_plane = img_lab[:,:,0]
-			cl2 = clahe.apply(lab_plane)
-			img_lab[:,:,0] = cl2
-			img = cv2.cvtColor(img_lab, cv2.COLOR_LAB2BGR)
-			'''
+			
 			img = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
+			'''
+			img2 = cv2.pyrDown(img)
+			'''
 			#cv2.imshow('Doom Buffer',img)
 			#cv2.waitKey(1)
 		# for RGB images
@@ -92,7 +87,7 @@ def convert(img,colorCorrection=False,num_channels=0):
 
 def create_cnn(input_rows,input_cols,num_outputs,final_activation='sigmoid'):
 	model = Sequential()
-	
+	'''
 	# input: input_colsxinput_rows images with 1 channels
 	model.add(Convolution2D(32, 7, 7,
 			border_mode='valid',
@@ -125,7 +120,7 @@ def create_cnn(input_rows,input_cols,num_outputs,final_activation='sigmoid'):
 	model.add(Flatten())
 	model.add(Dense(128,activation='relu'))
 	model.add(Dense(num_outputs,activation=final_activation))
-	'''
+	
 	
 	model.compile(loss='categorical_crossentropy',
 		optimizer='adadelta',

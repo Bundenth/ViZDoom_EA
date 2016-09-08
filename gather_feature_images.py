@@ -11,9 +11,9 @@ import learning_framework
 
 # supports gathering 2 types of images simultaneously
 # and from more than one map
-images_filename_1 = "feature_images/cig_orig_pistol_marine_rgb.dat"
-images_filename_2 = "feature_images/cig_orig_pistol_marine_gray.dat"
-doom_scenario = "scenarios/cig_orig_pistol.wad"
+images_filename_1 = "feature_images/cig_orig_rocket_marine_hires_rgb.dat"
+images_filename_2 = "feature_images/cig_orig_rocket_marine_hires_gray.dat"
+doom_scenario = "scenarios/cig_orig_rocket.wad"
 doom_config = "config/cig_playable.cfg"
 map1 = "map01"
 map2 = "map01"
