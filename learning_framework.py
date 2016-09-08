@@ -17,10 +17,10 @@ from keras.layers import Convolution2D, MaxPooling2D, LocallyConnected2D
 from keras.models import model_from_json
 
 # image parameters
-downsampled_x = 128 #64
-downsampled_y = 96#48
+downsampled_x = 128 #128
+downsampled_y = 96#96
 channels = 3 #channels on input image considered (GRAY8 = 1; RGB = 3)
-skiprate = 2
+skiprate = 3
 
 class FD_Fitness_factor(object):
 	VECTOR_DISTANCE_TANH = 0
