@@ -17,8 +17,8 @@ from keras.layers import Convolution2D, MaxPooling2D, LocallyConnected2D
 from keras.models import model_from_json
 
 # image parameters
-downsampled_x = 128 #128
-downsampled_y = 96#96
+downsampled_x = 64 #128
+downsampled_y = 48#96
 channels = 3 #channels on input image considered (GRAY8 = 1; RGB = 3)
 skiprate = 3
 

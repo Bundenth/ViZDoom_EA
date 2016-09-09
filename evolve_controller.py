@@ -25,11 +25,11 @@ import learning_framework
 
 
 ### general parameters
-feature_detector_file = 'feature_detector_nets/cig_pistol/FD_64x48x16_distanceL_hires_0.save'
-controller_network_filename = 'controller_nets/cig_pistol/NEAT_axisAction_16_distanceL_hires_linear__0_X2/controller'
-test_controller_net_gen = -1 # -1 to test all generations performance, > -1 to test specific generation 
-doom_scenario = "scenarios/cig_orig_pistol.wad"
-doom_config = "config/cig.cfg"
+feature_detector_file = 'feature_detector_nets/pursuit_and_gather/FD_64x48x16_distanceL_0.save'
+controller_network_filename = 'controller_nets/pursuit_and_gather/NEAT_axisAction_16_distanceL_linear_0_X2/controller'
+test_controller_net_gen = 230 # -1 to test all generations performance, > -1 to test specific generation 
+doom_scenario = "scenarios/pursuit_and_gather.wad"
+doom_config = "config/pursuit_and_gather.cfg"
 stats_file = "_stats.txt"
 evaluation_filename = "_eval.txt"
 map1 = "map01"
@@ -42,10 +42,10 @@ num_features = 16
 num_states = 1
 
 isTraining = False
-recordPerformance = True
+recordPerformance = False
 slowTestEpisode = not isTraining #whether test performance episodes should be slowed down
 useShapingRewardInTesting = False #count shaping reward when testing performance (shooting, USER1)
-isCig = True # whether or not the scenario is competition (cig)
+isCig = False # whether or not the scenario is competition (cig)
 isNEAT = True # choose between NEAT or ES-HyperNEAT
 isFS_NEAT = False # False: start with all inputs linked to all outputs; True: random input-output links
 isColourCorrection = False
@@ -64,7 +64,7 @@ if "health_gathering_supreme" in doom_scenario:
 	ammo_pack_reward = 0.0
 else:
 	health_kit_reward = 75.0 #75.0
-	shoot_reward = -5.0
+	shoot_reward = -35.0
 	ammo_pack_reward = 50.0 #50.0
 harm_reward = 0.0
 death_reward = 0.0
@@ -72,7 +72,7 @@ death_reward = 0.0
 initial_health = 100
 
 evaluation_episodes = 3
-epochs = 1500
+epochs = 1000
 if recordPerformance and test_controller_net_gen > -1:
 	recorded_test_episodes = 100
 	test_fitness_episodes = 1
@@ -116,7 +116,7 @@ else:
 	else:
 		number_actions = 3
 	if 'linear' in output_activation_function:
-		input_dead_zone = 10000
+		input_dead_zone = 1000
 	else:
 		input_dead_zone = 0.4
 
